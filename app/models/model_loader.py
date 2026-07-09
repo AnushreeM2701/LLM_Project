@@ -1,25 +1,27 @@
 from app.models.gemini import generate_response as gemini_response
+from app.models.qwen import generate_response as qwen_response
+from app.models.gpt_oss import generate_response as gpt_response
 
-# Uncomment later
-# from app.models.qwen import generate_response as qwen_response
-# from app.models.deepseek import generate_response as deepseek_response
+
+MODELS = {
+
+    "gemini": gemini_response,
+
+    "qwen": qwen_response,
+
+    "gpt": gpt_response
+
+}
 
 
 def get_model(model_name):
     """
-    Return the appropriate model function.
+    Return the selected model.
     """
 
     model_name = model_name.lower()
 
-    if model_name == "gemini":
-        return gemini_response
+    if model_name not in MODELS:
+        raise ValueError(f"Unknown model: {model_name}")
 
-    # elif model_name == "qwen":
-    #     return qwen_response
-
-    # elif model_name == "deepseek":
-    #     return deepseek_response
-
-    else:
-        raise ValueError(f"Unsupported model: {model_name}")
+    return MODELS[model_name]

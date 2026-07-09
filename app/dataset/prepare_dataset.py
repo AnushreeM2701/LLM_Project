@@ -1,5 +1,5 @@
 import pandas as pd
-
+import hashlib
 # ==========================================================
 # Configuration
 # ==========================================================
@@ -9,6 +9,18 @@ CATEGORY = "probability"
 INPUT_FILE = f"data/processed/selected_{CATEGORY}_questions.csv"
 OUTPUT_FILE = f"data/processed/final_{CATEGORY}_dataset.csv"
 
+# ==========================================================
+# Generate Question ID
+# ==========================================================
+
+def generate_question_id(question):
+    """
+    Generate a unique ID from the question text.
+    """
+
+    return hashlib.sha256(
+        str(question).encode("utf-8")
+    ).hexdigest()
 
 # ==========================================================
 # Extract Ground Truth Answer
@@ -65,6 +77,11 @@ def prepare_dataset():
     final_df = pd.DataFrame()
 
     final_df["Question Number"] = df["Question Number"]
+    
+    final_df["Question ID"] = (
+    df["Question"]
+    .apply(generate_question_id)
+    )
 
     final_df["Question"] = df["Question"]
 

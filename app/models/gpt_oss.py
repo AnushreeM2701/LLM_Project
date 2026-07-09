@@ -12,10 +12,14 @@ client = OpenAI(
 
 
 def generate_response(prompt):
+    """
+    Generate response using GPT-OSS 120B
+    through OpenRouter.
+    """
 
     response = client.chat.completions.create(
 
-        model="qwen/qwen3-next-80b-a3b-instruct:free",
+        model="openai/gpt-oss-120b:free",
 
         messages=[
             {
@@ -30,6 +34,10 @@ def generate_response(prompt):
 
     return response.choices[0].message.content
 
+
+# --------------------------------------------------
+# Test
+# --------------------------------------------------
 
 if __name__ == "__main__":
 

@@ -1,7 +1,8 @@
 import os
 import time
 import pandas as pd
-
+MAX_RETRIES = 5
+WAIT_TIME = 60
 from google.genai.errors import ClientError
 
 from app.config import (
@@ -39,7 +40,7 @@ def load_completed_experiments(path):
         completed.add(
 
             (
-                row["Question Number"],
+                row["Question ID"],
                 row["Model"],
                 row["Prompt"]
             )
@@ -47,7 +48,6 @@ def load_completed_experiments(path):
         )
 
     return completed
-
 
 # ==========================================================
 # Run Experiments
@@ -77,17 +77,18 @@ def run_experiment():
     for model in MODELS:
 
         print(f"\nModel : {model}")
-
+        skip_model = False
         for prompt in PROMPTS:
-
+            if skip_model:
+                break
             print(f"\nPrompt : {prompt}")
 
             for _, row in dataset.iterrows():
 
                 question_number = row["Question Number"]
-
+                question_id = row["Question ID"]
                 experiment = (
-                    question_number,
+                    question_id,
                     model,
                     prompt
                 )
@@ -105,7 +106,6 @@ def run_experiment():
                     continue
 
                 question = row["Question"]
-
                 original_level = row["Original Level"]
 
                 difficulty = row["Difficulty"]
@@ -132,6 +132,8 @@ def run_experiment():
                     "%Y-%m-%d %H:%M:%S"
                 )
 
+                retry_count = 0
+
                 while True:
 
                     try:
@@ -148,37 +150,71 @@ def run_experiment():
 
                         break
 
-                    except ClientError as e:
+                    except Exception as e:
 
-                        if "429" in str(e):
+                        error = str(e)
+
+                        # ------------------------
+                        # Daily Quota
+                        # ------------------------
+
+                        if "429" in error:
+
+                            retry_count += 1
 
                             print(
-                                "\nQuota exceeded."
+                                f"\nQuota exceeded "
+                                f"({retry_count}/{MAX_RETRIES})"
                             )
+
+                            if retry_count >= MAX_RETRIES:
+
+                                print(
+                                    f"\nSkipping remaining "
+                                    f"{model} experiments."
+                                )
+
+                                skip_model = True
+
+                                break
 
                             print(
-                                "Waiting 60 seconds..."
+                                f"Waiting {WAIT_TIME} seconds..."
                             )
 
-                            time.sleep(60)
+                            time.sleep(WAIT_TIME)
+
+                        # ------------------------
+                        # Temporary Server Busy
+                        # ------------------------
+
+                        elif "503" in error:
+
+                            retry_count += 1
+
+                            print(
+                                f"\nServer Busy "
+                                f"({retry_count}/{MAX_RETRIES})"
+                            )
+
+                            if retry_count >= MAX_RETRIES:
+
+                                print(
+                                    "\nSkipping this question."
+                                )
+
+                                response = ""
+
+                                break
+                            WAIT_SERVER = 30
+                            time.sleep(WAIT_SERVER)
 
                         else:
 
                             raise
-                # --------------------------------------
-                # End Time
-                # --------------------------------------
 
-                end_clock = time.perf_counter()
-
-                end_time = time.strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-
-                execution_time = round(
-                    end_clock - start_clock,
-                    2
-                )
+                if skip_model:
+                    break
 
                 # --------------------------------------
                 # Parse Model Response
@@ -197,6 +233,16 @@ def run_experiment():
                     parsed["model_final_answer"]
 
                 )
+                # -----------------------------------
+                # End Time
+                # -----------------------------------
+
+                end_clock = time.perf_counter()
+
+                end_time = time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+            )
+
                 execution_time = round(
                     end_clock - start_clock,
                     3
@@ -212,6 +258,9 @@ def run_experiment():
 
                     "Question Number":
                         question_number,
+
+                    "Question ID":
+                        question_id,
 
                     "Question":
                         question,
