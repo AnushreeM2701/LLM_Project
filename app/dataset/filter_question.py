@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dataset_loader import load_probability_dataset
+from app.dataset.dataset_loader import load_probability_dataset
 
 
 # Keywords to identify probability-related questions

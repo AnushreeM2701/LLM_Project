@@ -1,9 +1,6 @@
 import os
 import time
-import datetime
-import re
 import pandas as pd
-
 
 from google.genai.errors import ClientError
 
@@ -16,28 +13,18 @@ from app.config import (
 
 from app.models.inference import generate_response
 from app.parser.response_parser import parse_response
+from app.evaluation.evaluator import evaluate_response
 from app.utils.csv_writer import append_result
 
 
-def _normalize_answer(x):
-    """Normalize answers for exact-match evaluation."""
-    if x is None:
-        return ""
-    s = str(x).strip()
-    # remove LaTeX wrapper
-    s = re.sub(r"^\\boxed\{(.*)\}$", r"\1", s).strip()
-    # collapse whitespace
-    s = re.sub(r"\s+", " ", s)
-    # strip trailing punctuation
-    s = s.rstrip(". ,;:)")
-    return s
-
-
+# ==========================================================
+# Load Completed Experiments
+# ==========================================================
 
 def load_completed_experiments(path):
     """
-    Load completed experiments from the CSV.
-    This enables resume capability.
+    Read the existing results file so that
+    interrupted experiments can resume.
     """
 
     if not os.path.exists(path):
@@ -50,21 +37,29 @@ def load_completed_experiments(path):
     for _, row in df.iterrows():
 
         completed.add(
+
             (
                 row["Question Number"],
                 row["Model"],
                 row["Prompt"]
             )
+
         )
 
     return completed
 
 
+# ==========================================================
+# Run Experiments
+# ==========================================================
+
 def run_experiment():
 
     dataset = pd.read_csv(DATASET_PATH)
 
-    completed = load_completed_experiments(RESULTS_PATH)
+    completed = load_completed_experiments(
+        RESULTS_PATH
+    )
 
     total_experiments = (
         len(dataset)
@@ -75,12 +70,13 @@ def run_experiment():
     current = len(completed)
 
     print("=" * 60)
-    print(f"Total Experiments : {total_experiments}")
+    print("Starting Experiments")
     print("=" * 60)
+    print(f"Total Experiments : {total_experiments}")
 
     for model in MODELS:
 
-        print(f"\nRunning Model : {model}")
+        print(f"\nModel : {model}")
 
         for prompt in PROMPTS:
 
@@ -96,41 +92,59 @@ def run_experiment():
                     prompt
                 )
 
-                # Skip completed experiments
+                # --------------------------------------
+                # Resume Support
+                # --------------------------------------
+
                 if experiment in completed:
 
-                    print(f"Skipping Question {question_number}")
+                    print(
+                        f"Skipping Question {question_number}"
+                    )
 
                     continue
 
                 question = row["Question"]
 
-                level = row["Original Level"]
+                original_level = row["Original Level"]
 
                 difficulty = row["Difficulty"]
 
-                ground_truth_solution = row["Ground Truth Solution"]
+                ground_truth_solution = row[
+                    "Ground Truth Solution"
+                ]
 
-                ground_truth_answer = row["Ground Truth Answer"]
+                ground_truth_answer = row[
+                    "Ground Truth Answer"
+                ]
 
-                print(f"Running Question {question_number}")
+                print(
+                    f"\nRunning Question {question_number}"
+                )
 
-                # Retry if API quota/rate limit is reached
+                # --------------------------------------
+                # Measure Execution Time
+                # --------------------------------------
+
+                start_clock = time.perf_counter()
+
+                start_time = time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
                 while True:
 
                     try:
 
-                        start_time = time.time()
-                        start_dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                         response = generate_response(
-                            model_name=model,
-                            prompt_type=prompt,
-                            question=question
-                        )
 
-                        end_dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        elapsed = time.time() - start_time
+                            model_name=model,
+
+                            prompt_type=prompt,
+
+                            question=question
+
+                        )
 
                         break
 
@@ -138,54 +152,72 @@ def run_experiment():
 
                         if "429" in str(e):
 
-                            print("\nQuota exceeded.")
-                            print("Waiting 60 seconds...\n")
+                            print(
+                                "\nQuota exceeded."
+                            )
 
-                            raise
+                            print(
+                                "Waiting 60 seconds..."
+                            )
+
+                            time.sleep(60)
 
                         else:
+
                             raise
+                # --------------------------------------
+                # End Time
+                # --------------------------------------
+
+                end_clock = time.perf_counter()
+
+                end_time = time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                execution_time = round(
+                    end_clock - start_clock,
+                    2
+                )
+
+                # --------------------------------------
+                # Parse Model Response
+                # --------------------------------------
 
                 parsed = parse_response(response)
 
-                pred = _normalize_answer(parsed.get("final_answer", ""))
-                gt = _normalize_answer(ground_truth_answer)
+                # --------------------------------------
+                # Evaluate Answer
+                # --------------------------------------
 
-                if not pred:
-                    correct_val = "False"
-                    error_type_val = "No Final Answer"
-                else:
-                    if pred == gt:
-                        correct_val = "True"
-                        error_type_val = ""
-                    else:
-                        correct_val = "False"
-                        error_type_val = "Incorrect Answer"
+                evaluation = evaluate_response(
+
+                    ground_truth_answer,
+
+                    parsed["model_final_answer"]
+
+                )
+                execution_time = round(
+                    end_clock - start_clock,
+                    3
+                )
+                # --------------------------------------
+                # Create Result
+                # --------------------------------------
 
                 result = {
 
-
                     "Experiment ID":
-                        f"{question_number}_{model}_{prompt}",
-
-                    "Timestamp":
-                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-
-                    "Start Time":
-                        start_dt,
-
-                    "End Time":
-                        end_dt,
-
-                    "Time Taken Seconds":
-                        round(elapsed, 6),
-
+                        f"Q{question_number}_{model}_{prompt}",
 
                     "Question Number":
                         question_number,
 
+                    "Question":
+                        question,
+
                     "Original Level":
-                        level,
+                        original_level,
 
                     "Difficulty":
                         difficulty,
@@ -202,43 +234,64 @@ def run_experiment():
                     "Ground Truth Answer":
                         ground_truth_answer,
 
-                    "Full Response":
-                        parsed["full_response"],
+                    "Model Response":
+                        parsed["model_response"],
 
-                    "Reasoning":
-                        parsed["reasoning"],
+                    "Model Final Answer":
+                        parsed["model_final_answer"],
 
-                    "Final Answer":
-                        parsed["final_answer"],
-
-                    "Step Count":
-                        parsed["step_count"],
-
-                    "Correct":
-                        correct_val,
+                    "Answer Correct":
+                        evaluation["answer_correct"],
 
                     "Error Type":
-                        error_type_val
+                        evaluation["error_type"],
 
+                    "Start Time":
+                        start_time,
 
+                    "End Time":
+                        end_time,
+
+                    "Execution Time (s)":
+                        execution_time
                 }
 
+                # --------------------------------------
+                # Save Immediately
+                # --------------------------------------
+
                 append_result(
+
                     result,
+
                     RESULTS_PATH
+
                 )
 
                 completed.add(experiment)
 
                 current += 1
 
-                print(f"Progress : {current}/{total_experiments}")
+                print(
+
+                    f"Completed "
+
+                    f"{current}/{total_experiments}"
+
+                )
 
     print("\n" + "=" * 60)
-    print("All Experiments Completed Successfully")
+
+    print("All Experiments Completed")
+
     print("=" * 60)
 
+
+# ==========================================================
+# Main
+# ==========================================================
 
 if __name__ == "__main__":
 
     run_experiment()
+            

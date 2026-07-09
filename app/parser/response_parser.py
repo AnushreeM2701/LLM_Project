@@ -1,130 +1,97 @@
 import re
 
 
-def extract_final_answer_and_match(response):
-    """
-    Extract the final answer from the model response.
-
-    Returns:
-        (answer_str, match_span_start, match_span_end)
-        If no answer is found, returns ("", None, None).
-
-    Note: match spans are used to better trim reasoning.
-    """
-
-    patterns = [
-        # \boxed{...}
-        (r"\\boxed\{(.+?)\}", 0),
-        # Final Answer: ...
-        (r"Final Answer\s*[:\-]\s*(.+)", 1),
-        # The final answer is ...
-        (r"The final answer is\s*(.+)", 1),
-        # Answer: ...
-        (r"Answer\s*[:\-]\s*(.+)", 1),
-    ]
-
-    for pattern, _group in patterns:
-        match = re.search(
-            pattern,
-            response,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match:
-            answer = match.group(1).strip() if match.lastindex else ""
-            return answer, match.start(1), match.end(1)
-
-    return "", None, None
-
+# ==========================================================
+# Extract Final Answer
+# ==========================================================
 
 def extract_final_answer(response):
-    """Extract final answer string only."""
-    answer, _, _ = extract_final_answer_and_match(response)
-    return answer
+    """
+    Extract the answer inside \\boxed{...}.
+    Handles nested braces correctly.
+    """
+
+    response = str(response)
+
+    start = response.rfind(r"\boxed{")
+
+    if start == -1:
+        return ""
+
+    i = start + len(r"\boxed{")
+
+    brace_count = 1
+
+    answer = ""
+
+    while i < len(response):
+
+        char = response[i]
+
+        if char == "{":
+            brace_count += 1
+
+        elif char == "}":
+            brace_count -= 1
+
+            if brace_count == 0:
+                break
+
+        answer += char
+
+        i += 1
+
+    return answer.strip()
 
 
-def extract_reasoning(response):
-    """Extract reasoning by trimming away the detected final-answer region when possible."""
+# ==========================================================
+# Count Reasoning Steps
+# ==========================================================
 
-    answer, a_start, a_end = extract_final_answer_and_match(response)
+def count_steps(response):
+    """
+    Estimate the number of reasoning steps.
 
-    if a_start is not None and a_end is not None:
-        # Keep everything before the final answer substring.
-        reasoning = response[:a_start]
-        return reasoning.strip()
+    Current strategy:
+    Count numbered steps if present.
+    Otherwise count non-empty lines.
 
-    # Fallback: heuristic removal
-    reasoning = re.sub(
-        r"(Final Answer|The final answer is|Answer\s*:).*",
-        "",
+    This will later be replaced by an LLM-based
+    step counter.
+    """
+
+    response = str(response)
+
+    numbered = re.findall(
+        r'^\s*\d+[\.\)]',
         response,
-        flags=re.IGNORECASE | re.DOTALL
+        flags=re.MULTILINE
     )
 
-    return reasoning.strip()
+    if len(numbered) > 0:
+        return len(numbered)
 
-
-
-def count_reasoning_steps(reasoning):
-
-    """
-    Placeholder implementation.
-
-    Later this will be replaced by
-    an LLM-based reasoning step counter.
-    """
-
-    lines = []
-
-    for line in reasoning.split("\n"):
-
-        line = line.strip()
-
-        if line:
-            lines.append(line)
+    lines = [
+        line.strip()
+        for line in response.splitlines()
+        if line.strip()
+    ]
 
     return len(lines)
 
 
+# ==========================================================
+# Parse Response
+# ==========================================================
+
 def parse_response(response):
-    """
-    Parse the complete model response.
-    """
-
-    reasoning = extract_reasoning(response)
-
-    answer = extract_final_answer(response)
-
-    steps = count_reasoning_steps(reasoning)
 
     return {
 
-        "full_response": response,
+        "model_response": response,
 
-        "reasoning": reasoning,
+        "model_final_answer": extract_final_answer(response),
 
-        "final_answer": answer,
-
-        "step_count": steps
+        "model_step_count": count_steps(response)
 
     }
-
-
-if __name__ == "__main__":
-
-    sample_response = """
-A fair coin has two equally likely outcomes.
-
-Heads
-
-Tails
-
-Probability = 1/2
-
-Therefore,
-
-The final answer is 1/2.
-"""
-
-    result = parse_response(sample_response)
-
-    print(result)

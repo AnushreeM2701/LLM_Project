@@ -1,35 +1,42 @@
 import pandas as pd
 
-# ---------- Configuration ----------
+# ==========================================================
+# Configuration
+# ==========================================================
 
 CATEGORY = "probability"
 
 INPUT_FILE = f"data/processed/selected_{CATEGORY}_questions.csv"
 OUTPUT_FILE = f"data/processed/final_{CATEGORY}_dataset.csv"
 
-# -----------------------------------
 
+# ==========================================================
+# Extract Ground Truth Answer
+# ==========================================================
 
 def extract_ground_truth(solution):
     """
-    Extract the content inside the LAST \\boxed{...}
-    Handles nested braces such as:
-    \\boxed{\\frac{17}{24}}
+    Extract the complete answer inside \\boxed{...}
+    Handles nested braces correctly.
     """
 
-    start = solution.rfind("\\boxed{")
+    solution = str(solution)
+
+    start = solution.rfind(r"\boxed{")
 
     if start == -1:
-        return "Not Found"
+        return ""
 
-    start += len("\\boxed{")
+    # Move to first character after \boxed{
+    i = start + len(r"\boxed{")
 
     brace_count = 1
+
     answer = ""
 
-    while start < len(solution):
+    while i < len(solution):
 
-        char = solution[start]
+        char = solution[i]
 
         if char == "{":
             brace_count += 1
@@ -41,10 +48,15 @@ def extract_ground_truth(solution):
                 break
 
         answer += char
-        start += 1
+
+        i += 1
 
     return answer.strip()
 
+
+# ==========================================================
+# Prepare Final Dataset
+# ==========================================================
 
 def prepare_dataset():
 
@@ -52,67 +64,22 @@ def prepare_dataset():
 
     final_df = pd.DataFrame()
 
-    # -------------------------------
-    # Question Information
-    # -------------------------------
-
     final_df["Question Number"] = df["Question Number"]
+
     final_df["Question"] = df["Question"]
+
     final_df["Original Level"] = df["Original Level"]
+
     final_df["Difficulty"] = df["Difficulty"]
 
-    # -------------------------------
-    # Ground Truth
-    # -------------------------------
-
+    # Keep COMPLETE ground truth solution
     final_df["Ground Truth Solution"] = df["Solution"]
 
+    # Extract final boxed answer
     final_df["Ground Truth Answer"] = (
         df["Solution"]
         .apply(extract_ground_truth)
     )
-
-    final_df["Ground Truth Steps"] = ""
-
-    # -------------------------------
-    # Baseline
-    # -------------------------------
-
-    final_df["Baseline Output"] = ""
-    final_df["Baseline Answer"] = ""
-    final_df["Baseline Steps"] = ""
-
-    # -------------------------------
-    # Chain-of-Thought
-    # -------------------------------
-
-    final_df["CoT Output"] = ""
-    final_df["CoT Answer"] = ""
-    final_df["CoT Steps"] = ""
-
-    # -------------------------------
-    # Tree-of-Thought
-    # -------------------------------
-
-    final_df["ToT Output"] = ""
-    final_df["ToT Answer"] = ""
-    final_df["ToT Steps"] = ""
-
-    # -------------------------------
-    # Evaluation
-    # -------------------------------
-
-    final_df["Baseline Correct"] = ""
-    final_df["CoT Correct"] = ""
-    final_df["ToT Correct"] = ""
-
-    final_df["Baseline Error Type"] = ""
-    final_df["CoT Error Type"] = ""
-    final_df["ToT Error Type"] = ""
-
-    # -------------------------------
-    # Save
-    # -------------------------------
 
     final_df.to_csv(
         OUTPUT_FILE,
@@ -120,11 +87,15 @@ def prepare_dataset():
     )
 
     print("=" * 60)
-    print("Dataset Prepared Successfully")
+    print("Final Dataset Created Successfully")
     print("=" * 60)
-    print(f"Saved to:\n{OUTPUT_FILE}")
-    print("=" * 60)
+
+    print(final_df)
+
+    print("\nSaved to:")
+    print(OUTPUT_FILE)
 
 
 if __name__ == "__main__":
+
     prepare_dataset()

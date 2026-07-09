@@ -1,4 +1,4 @@
-from dataset_loader import load_probability_dataset
+from app.dataset.dataset_loader import load_probability_dataset
 
 
 def explore_dataset():
