@@ -1,7 +1,3 @@
-"""
-Main entry point for the dissertation project.
-"""
-
 print("=" * 60)
 print("LLM Mathematical Reasoning Evaluation Framework")
 print("=" * 60)

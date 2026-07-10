@@ -1,15 +1,15 @@
 from app.models.gemini import generate_response as gemini_response
-from app.models.qwen import generate_response as qwen_response
-from app.models.gpt_oss import generate_response as gpt_response
+from app.models.groq_model import generate_response as groq_response
+from app.models.mistral_model import generate_response as mistral_response
 
 
 MODELS = {
 
     "gemini": gemini_response,
 
-    "qwen": qwen_response,
+    "groq": groq_response,
 
-    "gpt": gpt_response
+    "mistral": mistral_response
 
 }
 

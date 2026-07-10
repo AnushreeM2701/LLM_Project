@@ -1,25 +1,23 @@
 import os
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from mistralai.client import Mistral
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+client = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY")
 )
 
 
 def generate_response(prompt):
     """
-    Generate response using GPT-OSS 120B
-    through OpenRouter.
+    Generate response using Mistral AI.
     """
 
-    response = client.chat.completions.create(
+    response = client.chat.complete(
 
-        model="openai/gpt-oss-120b:free",
+        model="mistral-small-latest",
 
         messages=[
             {

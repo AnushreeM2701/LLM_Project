@@ -89,7 +89,7 @@ def prepare_dataset():
 
     final_df["Difficulty"] = df["Difficulty"]
 
-    # Keep COMPLETE ground truth solution
+    # Complete ground truth solution
     final_df["Ground Truth Solution"] = df["Solution"]
 
     # Extract final boxed answer

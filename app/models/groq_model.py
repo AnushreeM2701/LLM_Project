@@ -1,21 +1,23 @@
 import os
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from groq import Groq
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 
 def generate_response(prompt):
+    """
+    Generate response using Groq.
+    """
 
     response = client.chat.completions.create(
 
-        model="qwen/qwen3-next-80b-a3b-instruct:free",
+        model="llama-3.3-70b-versatile",
 
         messages=[
             {
@@ -30,6 +32,10 @@ def generate_response(prompt):
 
     return response.choices[0].message.content
 
+
+# --------------------------------------------------
+# Test
+# --------------------------------------------------
 
 if __name__ == "__main__":
 

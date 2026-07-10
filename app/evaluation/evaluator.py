@@ -10,10 +10,6 @@ def normalize_answer(answer):
     """
     Normalize answers so equivalent answers
     can be compared.
-
-    Examples:
-    \\frac{1}{2} -> 1/2
-    \\dfrac{3}{4} -> 3/4
     """
 
     if answer is None:

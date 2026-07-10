@@ -6,9 +6,9 @@ MODELS = [
 
     "gemini",
 
-    "qwen",
+    "groq",
 
-    "gpt"
+    "mistral"
 
 ]
 
