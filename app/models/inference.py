@@ -1,4 +1,4 @@
-from app.prompts import baseline, cot, tot
+from app.prompts import cot, tot
 from app.models.model_loader import get_model
 
 

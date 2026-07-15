@@ -5,43 +5,120 @@ import re
 # Extract Final Answer
 # ==========================================================
 
+# ==========================================================
+# Extract Final Answer
+# ==========================================================
+
 def extract_final_answer(response):
     """
-    Extract the answer inside \\boxed{...}.
-    Handles nested braces correctly.
+    Extract the model's final answer.
+
+    Priority:
+    1. \\boxed{...}
+    2. Final answer:
+    3. Answer:
+    4. Last non-empty line
     """
 
-    response = str(response)
+    response = str(response).strip()
+
+    if not response:
+        return ""
+
+    # ------------------------------------------------------
+    # 1. Look for \boxed{...}
+    # ------------------------------------------------------
 
     start = response.rfind(r"\boxed{")
 
-    if start == -1:
-        return ""
+    if start != -1:
 
-    i = start + len(r"\boxed{")
+        i = start + len(r"\boxed{")
 
-    brace_count = 1
+        brace_count = 1
 
-    answer = ""
+        answer = ""
 
-    while i < len(response):
+        while i < len(response):
 
-        char = response[i]
+            char = response[i]
 
-        if char == "{":
-            brace_count += 1
+            if char == "{":
+                brace_count += 1
 
-        elif char == "}":
-            brace_count -= 1
+            elif char == "}":
+                brace_count -= 1
 
-            if brace_count == 0:
-                break
+                if brace_count == 0:
+                    break
 
-        answer += char
+            answer += char
 
-        i += 1
+            i += 1
 
-    return answer.strip()
+        return answer.strip()
+
+    # ------------------------------------------------------
+    # 2. Final answer
+    # ------------------------------------------------------
+
+    match = re.search(
+
+        r"final\s+answer\s+(?:is\s+)?[:\-]?\s*\$?(.+?)\$?(?:\.|\n|$)",
+
+        response,
+
+        flags=re.IGNORECASE
+
+    )
+
+    if match:
+
+        answer = match.group(1).strip()
+
+        answer = answer.strip("$")
+
+        answer = answer.rstrip(".")
+
+        return answer
+
+    # ------------------------------------------------------
+    # 3. Answer:
+    # ------------------------------------------------------
+
+    match = re.search(
+
+        r"answer\s*[:\-]?\s*(.+)",
+
+        response,
+
+        flags=re.IGNORECASE
+
+    )
+
+    if match:
+
+        return match.group(1).strip().strip("$").strip(".")
+
+    # ------------------------------------------------------
+    # 4. Last non-empty line
+    # ------------------------------------------------------
+
+    lines = [
+
+        line.strip()
+
+        for line in response.splitlines()
+
+        if line.strip()
+
+    ]
+
+    if lines:
+
+        return lines[-1].strip().strip("$").strip(".")
+
+    return ""
 
 
 # ==========================================================

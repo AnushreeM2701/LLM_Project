@@ -29,6 +29,13 @@ print("Loading AIME dataset...")
 
 aime = pd.read_excel(AIME_FILE)
 
+aime.rename(
+    columns={
+        "Official Answer": "Ground Truth Final Answer"
+    },
+    inplace=True
+)
+
 aime = aime[aime["Include"] == "T"].copy()
 
 aime["Source"] = "AIME"
@@ -206,6 +213,11 @@ dataset = dataset.sort_values(
     ["Category", "Difficulty"]
 ).reset_index(drop=True)
 
+dataset.insert(
+    0,
+    "Question Number",
+    range(1, len(dataset) + 1)
+)
 # ==========================================================
 # FORMAT TEXT
 # ==========================================================
@@ -220,6 +232,11 @@ dataset["Ground Truth Solution"] = dataset["Ground Truth Solution"].fillna("").a
     lambda x: "\n".join(
         textwrap.wrap(str(x), width=90)
     )
+)
+dataset["Ground Truth Final Answer"] = (
+    dataset["Ground Truth Final Answer"]
+    .fillna("")
+    .astype(str)
 )
 
 # ==========================================================
@@ -246,13 +263,14 @@ with pd.ExcelWriter(
     worksheet.auto_filter.ref = worksheet.dimensions
 
     # Column widths
-    worksheet.column_dimensions["A"].width = 15
-    worksheet.column_dimensions["B"].width = 12
-    worksheet.column_dimensions["C"].width = 18
-    worksheet.column_dimensions["D"].width = 12
-    worksheet.column_dimensions["E"].width = 70
-    worksheet.column_dimensions["F"].width = 20
-    worksheet.column_dimensions["G"].width = 90
+    worksheet.column_dimensions["A"].width = 15   # Question Number
+    worksheet.column_dimensions["B"].width = 18   # Question ID
+    worksheet.column_dimensions["C"].width = 15   # Source
+    worksheet.column_dimensions["D"].width = 20   # Category
+    worksheet.column_dimensions["E"].width = 12   # Difficulty
+    worksheet.column_dimensions["F"].width = 70   # Question
+    worksheet.column_dimensions["G"].width = 20   # Ground Truth Final Answer
+    worksheet.column_dimensions["H"].width = 90   # Ground Truth Solution
 
     # Wrap text
     for row in worksheet.iter_rows():
@@ -281,7 +299,7 @@ with pd.ExcelWriter(
         )
 
     # Center align selected columns
-    for col in ["A", "B", "C", "D", "F"]:
+    for col in ["A", "B", "C", "D", "E", "F", "G"]:
 
         for cell in worksheet[col]:
 

@@ -55,7 +55,23 @@ def load_completed_experiments(path):
 def run_experiment():
 
     dataset = pd.read_excel(DATASET_PATH)
+    # ==========================================================
+    # Create Ground Truth Lookups
+    # ==========================================================
 
+    answer_lookup = dict(
+        zip(
+            dataset["Question ID"],
+            dataset["Ground Truth Final Answer"]
+        )
+    )
+
+    solution_lookup = dict(
+        zip(
+            dataset["Question ID"],
+            dataset["Ground Truth Solution"]
+        )   
+    )
     completed = load_completed_experiments(
         RESULTS_PATH
     )
@@ -110,13 +126,15 @@ def run_experiment():
 
                 difficulty = row["Difficulty"]
 
-                ground_truth_solution = row[
-                    "Ground Truth Solution"
-                ]
+                ground_truth_solution = answer_lookup.gets(
+                    question_id,
+                    ""
+                ).strip()
 
-                ground_truth_answer = row[
-                    "Ground Truth Final Answer"
-                ]
+                ground_truth_answer = solution_lookup.get(
+                    question_id,
+                    ""
+                ).strip()
                 category = row["Category"]
                 Source = row["Source"]
 
