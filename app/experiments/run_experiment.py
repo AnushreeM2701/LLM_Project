@@ -3,7 +3,6 @@ import time
 import pandas as pd
 MAX_RETRIES = 5
 WAIT_TIME = 60
-from google.genai.errors import ClientError
 
 from app.config import (
     MODELS,
@@ -16,7 +15,7 @@ from app.models.inference import generate_response
 from app.parser.response_parser import parse_response
 from app.evaluation.evaluator import evaluate_response
 from app.utils.csv_writer import append_result
-
+from app.utils.csv_to_excel import csv_to_excel
 
 # ==========================================================
 # Load Completed Experiments
@@ -55,11 +54,13 @@ def load_completed_experiments(path):
 
 def run_experiment():
 
-    dataset = pd.read_csv(DATASET_PATH)
+    dataset = pd.read_excel(DATASET_PATH)
 
     completed = load_completed_experiments(
         RESULTS_PATH
     )
+    print(f"\nResuming experiment...")
+    print(f"Completed experiments found: {len(completed)}")
 
     total_experiments = (
         len(dataset)
@@ -106,7 +107,6 @@ def run_experiment():
                     continue
 
                 question = row["Question"]
-                original_level = row["Original Level"]
 
                 difficulty = row["Difficulty"]
 
@@ -115,8 +115,10 @@ def run_experiment():
                 ]
 
                 ground_truth_answer = row[
-                    "Ground Truth Answer"
+                    "Ground Truth Final Answer"
                 ]
+                category = row["Category"]
+                Source = row["Source"]
 
                 print(
                     f"\nRunning Question {question_number}"
@@ -262,12 +264,16 @@ def run_experiment():
                     "Question ID":
                         question_id,
 
+                    "Source":
+                        Source,
+
+                    "Category":
+                        category,
+
                     "Question":
                         question,
 
-                    "Original Level":
-                        original_level,
-
+                
                     "Difficulty":
                         difficulty,
 
@@ -280,7 +286,7 @@ def run_experiment():
                     "Ground Truth Solution":
                         ground_truth_solution,
 
-                    "Ground Truth Answer":
+                    "Ground Truth Final Answer":
                         ground_truth_answer,
 
                     "Model Response":
@@ -334,8 +340,10 @@ def run_experiment():
     print("All Experiments Completed")
 
     print("=" * 60)
-
-
+    csv_to_excel(RESULTS_PATH)
+    print()
+    print("CSV Results  :", RESULTS_PATH)
+    print("Excel Results:", RESULTS_PATH.replace(".csv", ".xlsx"))
 # ==========================================================
 # Main
 # ==========================================================

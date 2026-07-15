@@ -15,7 +15,6 @@ def generate_response(model_name, prompt_type, question):
     # ----------------------------
 
     PROMPT_BUILDERS = {
-    "baseline": baseline.build_prompt,
     "cot": cot.build_prompt,
     "tot": tot.build_prompt,
     }

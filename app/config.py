@@ -1,46 +1,42 @@
+import os
+
 # ==========================================================
 # Models to Evaluate
 # ==========================================================
 
 MODELS = [
-
     "gemini",
-
     "groq",
-
     "mistral"
-
 ]
-
 
 # ==========================================================
 # Prompting Techniques
 # ==========================================================
 
 PROMPTS = [
-
-    "baseline",
-
     "cot",
-
     "tot"
-
 ]
-
 
 # ==========================================================
 # Dataset
 # ==========================================================
 
-DATASET_PATH = "data/processed/final_probability_dataset.csv"
-
+DATASET_PATH = "data/processed/final_dataset.xlsx"
 
 # ==========================================================
 # Results
 # ==========================================================
 
-RESULTS_PATH = "data/results/experiment_results.csv"
+RESULTS_FOLDER = "data/results"
 
+os.makedirs(RESULTS_FOLDER, exist_ok=True)
+
+RESULTS_PATH = os.path.join(
+    RESULTS_FOLDER,
+    "experiment_results.csv"
+)
 
 # ==========================================================
 # Retry Settings
