@@ -7,30 +7,108 @@ from fractions import Fraction
 # ==========================================================
 
 def normalize_answer(answer):
-    """
-    Normalize answers so equivalent answers
-    can be compared.
-    """
 
     if answer is None:
         return ""
 
     answer = str(answer).strip()
 
-    # Remove spaces
-    answer = answer.replace(" ", "")
+    # ------------------------------------------
+    # Remove markdown
+    # ------------------------------------------
 
-    # Convert LaTeX fractions
+    answer = answer.replace("**", "")
+    answer = answer.replace("__", "")
+    answer = answer.replace("`", "")
+
+    # ------------------------------------------
+    # Remove LaTeX wrappers
+    # ------------------------------------------
+
+    answer = answer.replace("\\left", "")
+    answer = answer.replace("\\right", "")
+    answer = answer.replace("$", "")
+    answer = answer.replace("\\(", "")
+    answer = answer.replace("\\)", "")
+
+    # ------------------------------------------
+    # \boxed{}
+    # ------------------------------------------
+
     answer = re.sub(
-        r"\\d?frac\{(.*?)\}\{(.*?)\}",
+        r"\\boxed\{([^}]*)\}",
+        r"\1",
+        answer
+    )
+
+    # ------------------------------------------
+    # \text{Gray}
+    # ------------------------------------------
+
+    answer = re.sub(
+        r"\\text\{([^}]*)\}",
+        r"\1",
+        answer
+    )
+
+    # ------------------------------------------
+    # \frac{a}{b}
+    # ------------------------------------------
+
+    answer = re.sub(
+        r"\\d?frac\{([^}]*)\}\{([^}]*)\}",
         r"\1/\2",
         answer
     )
 
-    # Remove LaTeX wrappers
-    answer = answer.replace("\\left", "")
-    answer = answer.replace("\\right", "")
-    answer = answer.replace("$", "")
+    # ------------------------------------------
+    # x=5 , m =2
+    # ------------------------------------------
+
+    answer = re.sub(
+        r"^[A-Za-z]+\s*=\s*",
+        "",
+        answer
+    )
+
+    # ------------------------------------------
+    # Remove common words
+    # ------------------------------------------
+
+    answer = re.sub(
+        r"^(the\s+)?(final\s+)?answer\s*(is)?\s*",
+        "",
+        answer,
+        flags=re.IGNORECASE
+    )
+
+    # ------------------------------------------
+    # Remove units
+    # ------------------------------------------
+
+    answer = re.sub(
+        r"\b(minutes?|minute|hours?|hour|seconds?|km|km/h|meters?)\b",
+        "",
+        answer,
+        flags=re.IGNORECASE
+    )
+
+    # ------------------------------------------
+    # Remove punctuation
+    # ------------------------------------------
+
+    answer = answer.strip()
+
+    answer = answer.rstrip(".")
+
+    answer = answer.rstrip(",")
+
+    # ------------------------------------------
+    # Remove ALL spaces
+    # ------------------------------------------
+
+    answer = re.sub(r"\s+", "", answer)
+    answer = answer.lower()
 
     return answer
 
@@ -40,33 +118,42 @@ def normalize_answer(answer):
 # ==========================================================
 
 def compare_answers(ground_truth, model_answer):
-    """
-    Return True if answers are equivalent.
-    """
 
     gt = normalize_answer(ground_truth)
+
     pred = normalize_answer(model_answer)
 
+    # ------------------------------------------
     # Exact match
+    # ------------------------------------------
+
     if gt == pred:
+
         return True
 
-    # Try fraction comparison
+    # ------------------------------------------
+    # Fractions
+    # ------------------------------------------
+
     try:
 
-        gt_fraction = Fraction(gt)
-        pred_fraction = Fraction(pred)
+        if Fraction(gt) == Fraction(pred):
 
-        return gt_fraction == pred_fraction
+            return True
 
     except Exception:
 
         pass
 
-    # Try float comparison
+    # ------------------------------------------
+    # Floats
+    # ------------------------------------------
+
     try:
 
-        return abs(float(gt) - float(pred)) < 1e-8
+        if abs(float(gt) - float(pred)) < 1e-8:
+
+            return True
 
     except Exception:
 
@@ -81,13 +168,15 @@ def compare_answers(ground_truth, model_answer):
 
 def evaluate_response(ground_truth, model_answer):
 
+    correct = compare_answers(
+        ground_truth,
+        model_answer
+    )
+
     return {
 
-        "answer_correct": compare_answers(
-            ground_truth,
-            model_answer
-        ),
+        "answer_correct": correct,
 
-        "error_type": ""
+        "error_type": "" if correct else "Incorrect Answer"
 
     }

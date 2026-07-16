@@ -126,15 +126,15 @@ def run_experiment():
 
                 difficulty = row["Difficulty"]
 
-                ground_truth_solution = answer_lookup.gets(
+                ground_truth_solution = answer_lookup.get(
                     question_id,
                     ""
-                ).strip()
+                )
 
                 ground_truth_answer = solution_lookup.get(
                     question_id,
                     ""
-                ).strip()
+                )
                 category = row["Category"]
                 Source = row["Source"]
 

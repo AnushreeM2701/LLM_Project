@@ -92,6 +92,60 @@ dataset["Category"] = dataset.apply(
 )
 
 # ==========================================================
+# BALANCE DATASET
+# ==========================================================
+
+SEED = 25116096
+
+balanced_data = []
+
+for category in dataset["Category"].unique():
+
+    category_df = dataset[
+        dataset["Category"] == category
+    ]
+
+    # Keep all Easy questions (4)
+    easy = category_df[
+        category_df["Difficulty"] == "Easy"
+    ]
+
+    # Keep all Medium questions (4)
+    medium = category_df[
+        category_df["Difficulty"] == "Medium"
+    ]
+
+    # Keep only 8 Hard questions
+    hard = category_df[
+        category_df["Difficulty"] == "Hard"
+    ]
+
+    if len(hard) > 8:
+
+        hard = hard.sample(
+            n=8,
+            random_state=SEED
+        )
+
+    balanced_data.append(
+        pd.concat(
+            [
+                easy,
+                medium,
+                hard
+            ]
+        )
+    )
+
+dataset = pd.concat(
+    balanced_data,
+    ignore_index=True
+)
+dataset = dataset.sort_values(
+    ["Category", "Difficulty"]
+).reset_index(drop=True)
+
+# ==========================================================
 # GENERATE QUESTION IDs
 # ==========================================================
 

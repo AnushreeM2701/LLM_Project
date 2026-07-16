@@ -536,7 +536,7 @@ def run_error_evaluation():
             "Error Type"
         ].value_counts()
     )
-
+print(results["Error Type"].value_counts())
 
 # ==========================================================
 # MAIN

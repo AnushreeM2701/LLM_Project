@@ -183,3 +183,17 @@ print("Experiment Results Repaired Successfully")
 print("=" * 60)
 print("CSV   :", RESULTS_CSV)
 print("Excel :", RESULTS_EXCEL)
+
+print()
+
+print("=" * 60)
+print("ANSWER SUMMARY")
+print("=" * 60)
+
+print(results["Answer Correct"].value_counts())
+
+print()
+
+print("Wrong Answers :", (~results["Answer Correct"]).sum())
+
+print("Correct Answers :", results["Answer Correct"].sum())
