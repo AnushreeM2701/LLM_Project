@@ -1,7 +1,6 @@
 from app.models.gemini import generate_response as gemini_response
-from app.models.groq_model import generate_response as groq_response
+from app.models.groq import generate_response as groq_response
 from app.models.mistral_model import generate_response as mistral_response
-
 
 MODELS = {
 

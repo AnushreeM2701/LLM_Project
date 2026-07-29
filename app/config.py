@@ -7,7 +7,7 @@ import os
 MODELS = [
     "gemini",
     "groq",
-    "mistral"
+    'mistral'
 ]
 
 # ==========================================================

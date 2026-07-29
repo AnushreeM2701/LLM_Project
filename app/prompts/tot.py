@@ -1,23 +1,20 @@
 def build_prompt(question):
-    """
-    Tree-of-Thought Prompt
-    """
 
-    prompt = f"""
+    return f"""
 Solve the following mathematics problem.
 
-Before deciding on the final answer:
+Consider more than one possible approach before selecting the best one.
 
-1. Consider multiple possible solution strategies.
-2. Evaluate which strategy is most appropriate.
-3. Follow the best strategy step by step.
-4. If necessary, revise your reasoning before producing the final answer.
+Show only the reasoning for the final selected approach as clear, numbered steps.
 
-Finally, provide the final answer clearly.
+Format your response exactly as:
+
+Step 1: ...
+Step 2: ...
+Step 3: ...
+
+Final Answer: <answer>
 
 Problem:
-
 {question}
 """
-
-    return prompt

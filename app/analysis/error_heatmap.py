@@ -1,216 +1,478 @@
 import os
+import pandas as pd
+import numpy as np
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import matplotlib.colors as mcolors
+
+from matplotlib.patches import FancyBboxPatch
 
 # ==========================================================
 # FILE PATHS
 # ==========================================================
 
-RESULTS_FILE = "data/results/experiment_results.csv"
+FILE_PATH = "data/results/experiment_results.xlsx"
+SHEET_NAME = "Experiment Results"
 
-OUTPUT_FOLDER = "outputs"
-
-FIGURE_FOLDER = os.path.join(
-    OUTPUT_FOLDER,
-    "figures"
-)
-
-TABLE_FOLDER = os.path.join(
-    OUTPUT_FOLDER,
-    "tables"
-)
-
-os.makedirs(FIGURE_FOLDER, exist_ok=True)
-os.makedirs(TABLE_FOLDER, exist_ok=True)
+OUTPUT_DIR = "output"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ==========================================================
-# LOAD RESULTS
+# LOAD DATA
 # ==========================================================
 
 print("=" * 60)
-print("Loading Experiment Results")
+print("Loading Experiment Results...")
 print("=" * 60)
 
-results = pd.read_csv(RESULTS_FILE)
+df = pd.read_excel(
+    FILE_PATH,
+    sheet_name=SHEET_NAME
+)
 
 # ==========================================================
-# KEEP ONLY INCORRECT ANSWERS
+# CLEAN DATA
 # ==========================================================
 
-errors = results[
-    results["Answer Correct"] == False
+df.columns = df.columns.str.strip()
+
+df["Model"] = (
+    df["Model"]
+    .astype(str)
+    .str.strip()
+    .str.lower()
+)
+
+df["Prompt"] = (
+    df["Prompt"]
+    .astype(str)
+    .str.strip()
+    .str.lower()
+)
+
+df["Difficulty"] = (
+    df["Difficulty"]
+    .astype(str)
+    .str.strip()
+    .str.title()
+)
+
+df["Error Type"] = (
+    df["Error Type"]
+    .fillna("")
+    .astype(str)
+    .str.strip()
+)
+
+# ==========================================================
+# REMOVE NON-ERRORS
+# ==========================================================
+
+df = df[
+    df["Error Type"] != "Correct"
 ].copy()
 
 # ==========================================================
-# CREATE HEATMAP TABLE
+# KEEP ONLY TOP 6 ERROR TYPES
 # ==========================================================
 
-heatmap = pd.crosstab(
+TOP_ERRORS = [
 
-    errors["Model"],
+    "Combinatorial Counting Error",
 
-    errors["Error Type"]
+    "Logical Reasoning Error",
 
-)
+    "Algebraic Manipulation Error",
 
-# Save table
+    "Incorrect Assumption",
 
-heatmap.to_csv(
+    "Number Theory Error",
 
-    os.path.join(
+    "Arithmetic Error"
 
-        TABLE_FOLDER,
+]
 
-        "error_heatmap.csv"
+df = df[
+    df["Error Type"].isin(TOP_ERRORS)
+].copy()
 
-    )
+# ==========================================================
+# ORDERING
+# ==========================================================
 
+MODELS = [
+
+    "gemini",
+
+    "groq",
+
+    "mistral"
+
+]
+
+DIFFICULTIES = [
+
+    "Easy",
+
+    "Medium",
+
+    "Hard"
+
+]
+
+# ==========================================================
+# COLOR MAP
+# Similar to your reference image
+# ==========================================================
+
+colors = [
+
+    "#eef5fc",
+
+    "#d8e7f7",
+
+    "#b9d2ec",
+
+    "#88add1",
+
+    "#4d78aa",
+
+    "#1f4f85"
+
+]
+
+cmap = mcolors.LinearSegmentedColormap.from_list(
+    "paper_blue",
+    colors
 )
 
 print()
-
-print("=" * 60)
-print("Error Heatmap Table")
-print("=" * 60)
-
-print(heatmap)
+print("Data Loaded Successfully")
+print(f"Rows after filtering : {len(df)}")
+print()
 
 # ==========================================================
-# PLOT
+# CREATE PIVOT TABLE
 # ==========================================================
 
-plt.figure(figsize=(12,6))
+def create_matrix(prompt):
 
-plt.imshow(
+    temp = df[
+        df["Prompt"] == prompt.lower()
+    ].copy()
 
-    heatmap,
-    aspect="auto",
-    cmap="Reds",
-    interpolation="nearest"
+    rows = []
 
-)
+    index = []
+
+    for model in MODELS:
+
+        for difficulty in DIFFICULTIES:
+
+            subset = temp[
+                (temp["Model"] == model) &
+                (temp["Difficulty"] == difficulty)
+            ]
+
+            counts = []
+
+            for error in TOP_ERRORS:
+
+                counts.append(
+                    len(
+                        subset[
+                            subset["Error Type"] == error
+                        ]
+                    )
+                )
+
+            rows.append(counts)
+
+            index.append(
+                (
+                    model.capitalize(),
+                    difficulty
+                )
+            )
+
+    matrix = pd.DataFrame(
+        rows,
+        columns=TOP_ERRORS,
+        index=pd.MultiIndex.from_tuples(
+            index,
+            names=["Model", "Difficulty"]
+        )
+    )
+
+    return matrix
+
 
 # ==========================================================
-# AXES
+# DRAW HEATMAP
 # ==========================================================
 
-plt.xticks(
+def draw_heatmap(matrix, title, save_path):
 
-    range(len(heatmap.columns)),
+    nrows = matrix.shape[0]
+    ncols = matrix.shape[1]
 
-    heatmap.columns,
+    fig, ax = plt.subplots(
+        figsize=(11, 7)
+    )
 
-    rotation=45,
+    ax.set_xlim(0, ncols)
+    ax.set_ylim(0, nrows)
 
-    ha="right"
+    ax.invert_yaxis()
 
-)
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor("white")
 
-plt.yticks(
+    vmax = matrix.to_numpy().max()
 
-    range(len(heatmap.index)),
+    if vmax == 0:
+        vmax = 1
 
-    heatmap.index
+    norm = mcolors.Normalize(
+        vmin=0,
+        vmax=vmax
+    )
 
-)
+    # =====================================================
+    # Draw rounded cells
+    # =====================================================
 
-plt.xlabel(
+    for i in range(nrows):
 
-    "Error Type"
+        for j in range(ncols):
 
-)
+            value = matrix.iloc[i, j]
 
-plt.ylabel(
+            color = cmap(norm(value))
 
-    "Model"
+            cell = FancyBboxPatch(
 
-)
+                (j + 0.05, i + 0.05),
 
-plt.title(
+                0.90,
 
-    "Reasoning Error Heatmap by Model"
+                0.90,
 
-)
+                boxstyle="round,pad=0.02",
 
-# ==========================================================
-# CELL VALUES
-# ==========================================================
+                linewidth=1,
 
-max_value = heatmap.values.max()
+                edgecolor="white",
 
-for i in range(len(heatmap.index)):
+                facecolor=color
 
-    for j in range(len(heatmap.columns)):
+            )
 
-        value = heatmap.iloc[i, j]
+            ax.add_patch(cell)
 
-        text_color = "white" if value > max_value / 2 else "black"
+            ax.text(
 
-        plt.text(
+                j + 0.5,
 
-            j,
+                i + 0.5,
 
-            i,
+                str(value),
 
-            str(value),
+                ha="center",
 
-            ha="center",
+                va="center",
 
-            va="center",
+                fontsize=11,
 
-            fontsize=9,
+                fontweight="bold",
 
-            color=text_color,
+                color="black"
 
-            fontweight="bold"
+            )
 
+    # =====================================================
+    # Axis Labels
+    # =====================================================
+
+    ax.set_xticks(
+        np.arange(ncols) + 0.5
+    )
+
+    ax.set_xticklabels(
+
+        [
+            "Counting",
+            "Logical",
+            "Algebra",
+            "Assumption",
+            "Number\nTheory",
+            "Arithmetic"
+        ],
+
+        fontsize=10,
+
+        fontweight="bold"
+
+    )
+
+    ylabels = []
+
+    for idx, (model, difficulty) in enumerate(matrix.index):
+
+        if idx % 3 == 0:
+            ylabels.append(f"{model}\n{difficulty}")
+        else:
+            ylabels.append(difficulty)
+
+    ax.set_yticks(np.arange(nrows) + 0.5)
+
+    ax.set_yticklabels(
+        [
+            "Easy",
+            "Medium",
+            "Hard",
+            "Easy",
+            "Medium",
+            "Hard",
+            "Easy",
+            "Medium",
+            "Hard",
+        ],
+        fontsize=10
+    )
+
+    # Model labels (display only once)
+    ax.text(
+        -1.30, 1.5, "Gemini",
+        fontsize=11,
+        fontweight="bold",
+        ha="left",
+        va="center"
+    )
+
+    ax.text(
+        -1.30, 4.5, "Groq",
+        fontsize=11,
+        fontweight="bold",
+        ha="left",
+        va="center"
+    )
+
+    ax.text(
+        -1.30, 7.5, "Mistral",
+        fontsize=11,
+        fontweight="bold",
+        ha="left",
+        va="center"
+    )
+
+    # =====================================================
+    # Group separator
+    # =====================================================
+
+    for y in [3, 6]:
+
+        ax.axhline(
+            y,
+            color="gray",
+            linewidth=2
         )
 
-# ==========================================================
-# COLOR BAR
-# ==========================================================
+    # =====================================================
+    # Remove ticks
+    # =====================================================
 
-plt.colorbar(
-    label="Number of Errors"
-)
+    ax.tick_params(length=0)
 
-plt.tight_layout()
+    for spine in ax.spines.values():
 
-plt.savefig(
+        spine.set_visible(False)
 
-    os.path.join(
+    plt.title(
 
-        FIGURE_FOLDER,
+        title,
 
-        "error_heatmap.png"
+        fontsize=18,
 
-    ),
+        fontweight="bold",
 
-    dpi=300
-
-)
-
-plt.close()
-
-# ==========================================================
-# SUMMARY
-# ==========================================================
-
-print()
-
-print("=" * 60)
-print("Figure Saved")
-print("=" * 60)
-
-print(
-
-    os.path.join(
-
-        FIGURE_FOLDER,
-
-        "error_heatmap.png"
+        pad=20
 
     )
 
+    # =====================================================
+    # Colorbar
+    # =====================================================
+
+    sm = plt.cm.ScalarMappable(
+        cmap=cmap,
+        norm=norm
+    )
+
+    sm.set_array([])
+
+    plt.colorbar(
+        sm,
+        ax=ax,
+        fraction=0.03,
+        pad=0.02
+    )
+
+    plt.subplots_adjust(left=0.28)
+
+    plt.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.close()
+
+    print(f"Saved -> {save_path}")
+
+    # ==========================================================
+# GENERATE CoT HEATMAP
+# ==========================================================
+
+cot_matrix = create_matrix("cot")
+
+draw_heatmap(
+    matrix=cot_matrix,
+    title="CoT Error Distribution by Model and Difficulty",
+    save_path=os.path.join(
+        OUTPUT_DIR,
+        "cot_error_heatmap.png"
+    )
 )
+
+# ==========================================================
+# GENERATE ToT HEATMAP
+# ==========================================================
+
+tot_matrix = create_matrix("tot")
+
+draw_heatmap(
+    matrix=tot_matrix,
+    title="ToT Error Distribution by Model and Difficulty",
+    save_path=os.path.join(
+        OUTPUT_DIR,
+        "tot_error_heatmap.png"
+    )
+)
+
+# ==========================================================
+# PRINT MATRICES (Optional)
+# ==========================================================
+
+print("\n================ CoT Matrix ================\n")
+print(cot_matrix)
+
+print("\n================ ToT Matrix ================\n")
+print(tot_matrix)
+
+print("\n============================================")
+print("Heatmaps generated successfully!")
+print(f"Saved to: {OUTPUT_DIR}")
+print("============================================")
+
+

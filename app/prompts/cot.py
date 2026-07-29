@@ -1,18 +1,18 @@
 def build_prompt(question):
-    """
-    Chain-of-Thought Prompt
-    """
 
-    prompt = f"""
+    return f"""
 Solve the following mathematics problem.
 
-Think through the solution step by step before giving your final answer.
+Show your reasoning as clear, numbered steps.
 
-At the end, clearly state the final answer.
+Format your response exactly as:
+
+Step 1: ...
+Step 2: ...
+Step 3: ...
+
+Final Answer: <answer>
 
 Problem:
-
 {question}
 """
-
-    return prompt

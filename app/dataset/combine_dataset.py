@@ -105,27 +105,46 @@ for category in dataset["Category"].unique():
         dataset["Category"] == category
     ]
 
-    # Keep all Easy questions (4)
+    # Keep all Easy questions (10)
     easy = category_df[
         category_df["Difficulty"] == "Easy"
     ]
 
-    # Keep all Medium questions (4)
+    # Keep all Medium questions (10)
     medium = category_df[
         category_df["Difficulty"] == "Medium"
     ]
 
-    # Keep only 8 Hard questions
-    hard = category_df[
-        category_df["Difficulty"] == "Hard"
+    # Keep Hard questions
+
+    hard_aime = category_df[
+        (category_df["Difficulty"] == "Hard") &
+        (category_df["Source"] == "AIME")
     ]
 
-    if len(hard) > 8:
+    hard_hendrycks = category_df[
+        (category_df["Difficulty"] == "Hard") &
+        (category_df["Source"] == "Hendrycks")
+    ]
 
-        hard = hard.sample(
-            n=8,
+    # Keep exactly 8 AIME
+    if len(hard_aime) > 5:
+        hard_aime = hard_aime.sample(
+            n=5,
             random_state=SEED
         )
+
+    # Keep exactly 2 Hendrycks
+    if len(hard_hendrycks) > 5:
+        hard_hendrycks = hard_hendrycks.sample(
+            n=5,
+            random_state=SEED
+        )
+
+    hard = pd.concat(
+        [hard_aime, hard_hendrycks],
+        ignore_index=True
+    )
 
     balanced_data.append(
         pd.concat(
@@ -375,3 +394,13 @@ print(
         ["Category", "Difficulty"]
     ).size()
 )
+
+for category in dataset["Category"].unique():
+
+    hard = dataset[
+        (dataset["Category"] == category) &
+        (dataset["Difficulty"] == "Hard")
+    ]
+
+    print(f"\n{category}")
+    print(hard["Source"].value_counts())

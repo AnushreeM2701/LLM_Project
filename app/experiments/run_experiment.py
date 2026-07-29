@@ -22,10 +22,6 @@ from app.utils.csv_to_excel import csv_to_excel
 # ==========================================================
 
 def load_completed_experiments(path):
-    """
-    Read the existing results file so that
-    interrupted experiments can resume.
-    """
 
     if not os.path.exists(path):
         return set()
@@ -55,28 +51,10 @@ def load_completed_experiments(path):
 def run_experiment():
 
     dataset = pd.read_excel(DATASET_PATH)
-    # ==========================================================
-    # Create Ground Truth Lookups
-    # ==========================================================
 
-    answer_lookup = dict(
-        zip(
-            dataset["Question ID"],
-            dataset["Ground Truth Final Answer"]
-        )
-    )
-
-    solution_lookup = dict(
-        zip(
-            dataset["Question ID"],
-            dataset["Ground Truth Solution"]
-        )   
-    )
     completed = load_completed_experiments(
         RESULTS_PATH
     )
-    print(f"\nResuming experiment...")
-    print(f"Completed experiments found: {len(completed)}")
 
     total_experiments = (
         len(dataset)
@@ -126,17 +104,11 @@ def run_experiment():
 
                 difficulty = row["Difficulty"]
 
-                ground_truth_solution = answer_lookup.get(
-                    question_id,
-                    ""
-                )
-
-                ground_truth_answer = solution_lookup.get(
-                    question_id,
-                    ""
-                )
                 category = row["Category"]
-                Source = row["Source"]
+
+                ground_truth_solution = row["Ground Truth Solution"]
+
+                ground_truth_answer = row["Ground Truth Final Answer"]
 
                 print(
                     f"\nRunning Question {question_number}"
@@ -282,16 +254,12 @@ def run_experiment():
                     "Question ID":
                         question_id,
 
-                    "Source":
-                        Source,
-
                     "Category":
                         category,
 
                     "Question":
                         question,
 
-                
                     "Difficulty":
                         difficulty,
 
@@ -304,7 +272,7 @@ def run_experiment():
                     "Ground Truth Solution":
                         ground_truth_solution,
 
-                    "Ground Truth Final Answer":
+                    "Ground Truth Answer":
                         ground_truth_answer,
 
                     "Model Response":
@@ -313,11 +281,14 @@ def run_experiment():
                     "Model Final Answer":
                         parsed["model_final_answer"],
 
-                    "Answer Correct":
-                        evaluation["answer_correct"],
+                    "Reasoning":
+                        parsed["reasoning"],
 
-                    "Error Type":
-                        evaluation["error_type"],
+                    "Step Count":
+                        parsed["model_step_count"],
+
+                    "Answer Correct":
+                        evaluation["correct"],
 
                     "Start Time":
                         start_time,
@@ -358,10 +329,10 @@ def run_experiment():
     print("All Experiments Completed")
 
     print("=" * 60)
+
     csv_to_excel(RESULTS_PATH)
-    print()
-    print("CSV Results  :", RESULTS_PATH)
-    print("Excel Results:", RESULTS_PATH.replace(".csv", ".xlsx"))
+
+
 # ==========================================================
 # Main
 # ==========================================================

@@ -17,7 +17,9 @@ SUBJECTS = {
 LEVEL_MAP = {
     "Level 1": "Easy",
     "Level 2": "Easy",
-    "Level 3": "Medium"
+    "Level 3": "Medium",
+    "Level 4": "Medium",
+    "Level 5": "Hard"
 }
 
 OUTPUT_FOLDER = "data/candidates"
@@ -208,7 +210,7 @@ with pd.ExcelWriter(
 
         df["Difficulty"] = pd.Categorical(
             df["Difficulty"],
-            categories=["Easy","Medium"],
+            categories=["Easy","Medium", "Hard"],
             ordered=True
         )
 

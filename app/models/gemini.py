@@ -1,5 +1,4 @@
 import os
-
 from google import genai
 from dotenv import load_dotenv
 
@@ -13,9 +12,9 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=API_KEY)
 
 
-def generate_response(prompt):
+def generate_response(prompt: str) -> str:
     """
-    Send a prompt to Gemini and return the response.
+    Generate a response using Gemini.
     """
 
     response = client.models.generate_content(
@@ -23,20 +22,16 @@ def generate_response(prompt):
         contents=prompt,
     )
 
-    return response.text
+    if response.text:
+        return response.text.strip()
+
+    return ""
 
 
 if __name__ == "__main__":
 
-    prompt = """
-    Solve this maths problem. 
-    
-    If a fair coin is tossed once, what is the probability of getting Heads?
-
-    Explain your reasoning.
+    question = """
+If a fair coin is tossed once, what is the probability of obtaining heads?
 """
 
-    response = generate_response(prompt)
-
-    print("\nGemini Response:\n")
-    print(response)
+    print(generate_response(question))

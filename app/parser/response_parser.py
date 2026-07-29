@@ -1,502 +1,109 @@
 import re
 
-
-# ==========================================================
-# CLEAN TEXT
-# ==========================================================
-
 def clean_text(text):
-
     text = str(text)
-
-    text = text.replace("```", "")
-    text = text.replace("**", "")
-    text = text.replace("__", "")
-    text = text.replace("###", "")
-    text = text.replace("##", "")
-    text = text.replace("#", "")
-
+    for t in ["```","**","__","###","##","#"]:
+        text = text.replace(t,"")
     return text.strip()
 
-
-# ==========================================================
-# CLEAN ANSWER
-# ==========================================================
-
 def clean_answer(answer):
-
     answer = clean_text(answer)
-
-    if not answer:
-        return ""
-
-    # remove $
-    answer = answer.strip("$")
-
-    # remove punctuation
-    answer = answer.rstrip(".")
-    answer = answer.rstrip(",")
-
-    # remove escaped brackets
-    answer = answer.replace(r"\(", "")
-    answer = answer.replace(r"\)", "")
-
-    # latex spacing
-    answer = answer.replace(r"\,", " ")
-    answer = answer.replace(r"\;", " ")
-    answer = answer.replace(r"\!", "")
-
-    # ------------------------------------------
-    # \text{Gray}
-    # ------------------------------------------
-
-    answer = re.sub(
-
-        r"\\text\{([^}]*)\}",
-
-        r"\1",
-
-        answer
-
-    )
-
-    # ------------------------------------------
-    # \boxed{}
-    # ------------------------------------------
-
-    answer = re.sub(
-
-        r"\\boxed\{([^}]*)\}",
-
-        r"\1",
-
-        answer
-
-    )
-
-    # ------------------------------------------
-    # \frac{31}{90}
-    # ------------------------------------------
-
-    answer = re.sub(
-
-        r"\\frac\{([^}]*)\}\{([^}]*)\}",
-
-        r"\1/\2",
-
-        answer
-
-    )
-
-    # ------------------------------------------
-    # variable assignment
-    # x = 5
-    # m = 2
-    # ------------------------------------------
-
-    answer = re.sub(
-
-        r"^[A-Za-z]+\s*=\s*",
-
-        "",
-
-        answer
-
-    )
-
-    # ------------------------------------------
-    # remove units
-    # ------------------------------------------
-
-    answer = re.sub(
-
-        r"\b(minutes?|minute|hours?|hour|seconds?|km|km/h|meters?)\b",
-
-        "",
-
-        answer,
-
-        flags=re.IGNORECASE
-
-    )
-
-    answer = re.sub(
-
-        r"\s+",
-
-        " ",
-
-        answer
-
-    )
-
-    return answer.strip()
-
-
-# ==========================================================
-# EXTRACT BOXED
-# ==========================================================
+    answer = answer.strip("$").replace(",", "")
+    answer = answer.replace(r"\(","").replace(r"\)","")
+    answer = re.sub(r"\\text\{([^}]*)\}", r"\1", answer)
+    answer = re.sub(r"\\boxed\{([^}]*)\}", r"\1", answer)
+    answer = re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", answer)
+    answer = re.sub(r"^[A-Za-z]+\s*=\s*", "", answer)
+    answer = re.sub(r"\s+"," ",answer)
+    return answer.strip(" .,")
 
 def extract_boxed(response):
+    # First try boxed fractions like \boxed{\frac{4}{3}}
+    m = re.findall(
+        r"\\boxed\{(\\frac\{[^{}]+\}\{[^{}]+\})\}",
+        response
+    )
+    if m:
+        return clean_answer(m[-1])
 
-    start = response.rfind(r"\boxed{")
+    # Then normal boxed values like \boxed{2}
+    m = re.findall(
+        r"\\boxed\{([^{}]+)\}",
+        response
+    )
+    if m:
+        return clean_answer(m[-1])
 
-    if start == -1:
-
-        return None
-
-    i = start + len(r"\boxed{")
-
-    depth = 1
-
-    answer = ""
-
-    while i < len(response):
-
-        c = response[i]
-
-        if c == "{":
-
-            depth += 1
-
-        elif c == "}":
-
-            depth -= 1
-
-            if depth == 0:
-
-                break
-
-        answer += c
-
-        i += 1
-
-    return clean_answer(answer)
-
-
-# ==========================================================
-# EXTRACT MATHEMATICAL EXPRESSION
-# ==========================================================
+    return None
 
 def extract_expression(text):
-
     text = clean_answer(text)
+    for p in [r"\d+\s+\d+/\d+", r"-?\d+/\d+", r"-?\d+(?:\.\d+)?%"]:
+        m = re.search(p,text)
+        if m: return m.group()
+    # Mixed numbers (e.g., 2 1/3)
+    m = re.search(r"\d+\s+\d+/\d+", text)
+    if m:
+        return m.group()
 
-    # mixed fraction
+    # Fractions (e.g., 4/3)
+    m = re.search(r"-?\d+/\d+", text)
+    if m:
+        return m.group()
 
-    mixed = re.search(
+    # Percentages (e.g., 25%)
+    m = re.search(r"-?\d+(?:\.\d+)?%", text)
+    if m:
+        return m.group()
 
-        r"\d+\s+\d+/\d+",
-
-        text
-
-    )
-
-    if mixed:
-
-        return mixed.group()
-
-    # fraction
-
-    frac = re.search(
-
-        r"\d+/\d+",
-
-        text
-
-    )
-
-    if frac:
-
-        return frac.group()
-
-        # ------------------------------------------
-    # Mixed fraction
-    # ------------------------------------------
-
-    mixed = re.search(
-        r"\d+\s+\d+/\d+",
-        text
-    )
-
-    if mixed:
-        return mixed.group()
-
-    # ------------------------------------------
-    # Fraction
-    # ------------------------------------------
-
-    frac = re.search(
-        r"\d+/\d+",
-        text
-    )
-
-    if frac:
-        return frac.group()
-
-    # ------------------------------------------
-    # Polynomial / equation
-    # Example:
-    # 24x^2-6x+3
-    # ------------------------------------------
-
-    poly = re.search(
-        r"[0-9A-Za-z\^\+\-\*/]+(?:=[0-9A-Za-z\^\+\-\*/]+)?",
-        text
-    )
-
-    if poly and any(op in poly.group() for op in ["+", "-", "^", "*", "/"]):
-        return clean_answer(poly.group())
-
-    # ------------------------------------------
-    # Standalone number
-    # Take LAST number
-    # ------------------------------------------
-
-    numbers = re.findall(
-        r"-?\d+(?:\.\d+)?",
-        text
-    )
-
-    if numbers:
-        return numbers[-1]
-
-    # ------------------------------------------
-    # Standalone word
-    # Take LAST word
-    # Gray
-    # Saturday
-    # ------------------------------------------
-
-    words = re.findall(
-        r"[A-Za-z]+",
-        text
-    )
-
-    if words:
-        return words[-1]
-
-    return clean_answer(text)
-
-# ==========================================================
-# EXTRACT FINAL ANSWER
-# ==========================================================
+    # Integers/decimals
+    m = re.search(r"-?\d+(?:\.\d+)?", text)
+    if m:
+        return m.group()
+    words = re.findall(r"[A-Za-z]+", text)
+    if words: return words[-1]
+    return text
 
 def extract_final_answer(response):
-
     response = clean_text(response)
-
-    if not response:
-        return ""
-
-    # ------------------------------------------------------
-    # 1. BOXED ANSWER
-    # ------------------------------------------------------
-
     boxed = extract_boxed(response)
-
     if boxed:
         return boxed
-
-    # ------------------------------------------------------
-    # 2. COMMON FINAL ANSWER PATTERNS
-    # ------------------------------------------------------
-
-    patterns = [
-
+    pats=[
         r"final\s*answer\s*[:\-]?\s*(.*)",
-
-        r"final\s*answer\s*is\s*(.*)",
-
-        r"the\s*final\s*answer\s*is\s*(.*)",
-
-        r"answer\s*[:\-]?\s*(.*)",
-
-        r"answer\s*is\s*(.*)",
-
-        r"therefore\s*,?\s*the\s*answer\s*is\s*(.*)",
-
-        r"thus\s*,?\s*the\s*answer\s*is\s*(.*)"
-
+        r"answer\s*[:\-]?\s*(.*)"
     ]
-
-    for pattern in patterns:
-
-        matches = re.findall(
-
-            pattern,
-
-            response,
-
-            flags=re.IGNORECASE
-
-        )
-
-        if matches:
-
-            candidate = matches[-1]
-
-            candidate = candidate.split("\n")[0]
-
-            candidate = clean_answer(candidate)
-
-            # remove leading phrases
-
-            candidate = re.sub(
-
-                r"^(the\s+)?(final\s+)?answer\s+is\s+",
-
-                "",
-
-                candidate,
-
-                flags=re.IGNORECASE
-
-            )
-
-            candidate = re.sub(
-
-                r"^(the\s+)?answer\s+",
-
-                "",
-
-                candidate,
-
-                flags=re.IGNORECASE
-
-            )
-
-            candidate = re.sub(
-
-                r"^is\s+",
-
-                "",
-
-                candidate,
-
-                flags=re.IGNORECASE
-
-            )
-
-            candidate = extract_expression(candidate)
-
-            return candidate
-
-    # ------------------------------------------------------
-    # 3. SEARCH FROM BOTTOM
-    # ------------------------------------------------------
-
-    lines = [
-
-        clean_answer(line)
-
-        for line in response.splitlines()
-
-        if line.strip()
-
-    ]
-
-    ignore = [
-
-        "step",
-
-        "solution",
-
-        "reasoning",
-
-        "calculation",
-
-        "therefore"
-
-    ]
-
-    for line in reversed(lines):
-
-        if len(line) > 200:
+    for p in pats:
+        m=re.findall(p,response,flags=re.I)
+        if m:
+            return extract_expression(m[-1].split("\n")[0])
+    for line in reversed([x for x in response.splitlines() if x.strip()]):
+        if line.lower().startswith(("step","reasoning","solution")):
             continue
-
-        if any(
-
-            line.lower().startswith(word)
-
-            for word in ignore
-
-        ):
-
-            continue
-
-        candidate = extract_expression(line)
-
-        if candidate:
-
-            return candidate
-
+        return extract_expression(line)
     return ""
 
-
-# ==========================================================
-# COUNT STEPS
-# ==========================================================
+def extract_reasoning(response):
+    parts = re.split(
+    r"final\s*answer\s*[:=\-]?",
+    response,
+    flags=re.I
+    )
+    return parts[0].strip()
 
 def count_steps(response):
-
-    response = str(response)
-
-    numbered = re.findall(
-
-        r'^\s*\d+[\.\)]',
-
-        response,
-
-        flags=re.MULTILINE
-
-    )
-
-    if numbered:
-
-        return len(numbered)
-
-    bullet_points = re.findall(
-
-        r'^\s*[-•*]',
-
-        response,
-
-        flags=re.MULTILINE
-
-    )
-
-    if bullet_points:
-
-        return len(bullet_points)
-
-    lines = [
-
-        line.strip()
-
-        for line in response.splitlines()
-
-        if line.strip()
-
-    ]
-
-    return len(lines)
-
-
-# ==========================================================
-# PARSE RESPONSE
-# ==========================================================
+    s=re.findall(r"^\s*step\s+\d+\s*:",response,flags=re.I|re.M)
+    if s: return len(s)
+    s=re.findall(r"^\s*\d+[\.)]",response,flags=re.M)
+    if s: return len(s)
+    s=re.findall(r"^\s*[-*•]",response,flags=re.M)
+    if s: return len(s)
+    return len([x for x in response.splitlines() if x.strip()])
 
 def parse_response(response):
-
-    final_answer = extract_final_answer(response)
-
     return {
-
         "model_response": response,
-
-        "model_final_answer": final_answer,
-
+        "reasoning": extract_reasoning(response),
+        "model_final_answer": extract_final_answer(response),
         "model_step_count": count_steps(response)
-
     }
