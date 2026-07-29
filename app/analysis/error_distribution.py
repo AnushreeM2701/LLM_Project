@@ -1,11 +1,8 @@
 import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# ==========================================================
 # FILE PATHS
-# ==========================================================
 
 RESULTS_FILE = "data/results/experiment_results.csv"
 
@@ -24,9 +21,7 @@ TABLE_FOLDER = os.path.join(
 os.makedirs(FIGURE_FOLDER, exist_ok=True)
 os.makedirs(TABLE_FOLDER, exist_ok=True)
 
-# ==========================================================
 # LOAD RESULTS
-# ==========================================================
 
 print("=" * 60)
 print("Loading Experiment Results")
@@ -34,34 +29,23 @@ print("=" * 60)
 
 results = pd.read_csv(RESULTS_FILE)
 
-# ==========================================================
 # KEEP ONLY INCORRECT ANSWERS
-# ==========================================================
 
 errors = results[
     results["Answer Correct"] == False
 ].copy()
 
-# ==========================================================
 # ERROR COUNTS
-# ==========================================================
 
 error_counts = (
-
     errors["Error Type"]
-
     .value_counts()
-
     .reset_index()
-
 )
 
 error_counts.columns = [
-
     "Error Type",
-
     "Count"
-
 ]
 
 print()
@@ -72,9 +56,7 @@ print("=" * 60)
 
 print(error_counts)
 
-# ==========================================================
 # SAVE TABLE
-# ==========================================================
 
 error_counts.to_csv(
 
