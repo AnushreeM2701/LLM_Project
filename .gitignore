@@ -1,13 +1,12 @@
 # Virtual Environment
 .venv/
 
-# Python
+# Environment Variables
+.env
+
+# Python Cache
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Jupyter
-.ipynb_checkpoints/
 
 # VS Code
 .vscode/
@@ -15,11 +14,5 @@ __pycache__/
 # macOS
 .DS_Store
 
-# Outputs
-outputs/
-
-# Logs
+# Log Files
 *.log
-
-# Environment Variables
-.env

@@ -1,0 +1,4 @@
+Model,Algebraic Manipulation Error,Arithmetic Error,Combinatorial Counting Error,Correct,Formula Misapplication,Incomplete Reasoning,Incorrect Assumption,Logical Reasoning Error,Number Theory Error,Other,Probability Reasoning Error
+gemini,2,3,10,1,0,1,6,14,6,0,3
+groq,6,2,9,0,2,4,6,22,7,1,2
+mistral,2,0,11,2,1,1,12,8,7,0,2
