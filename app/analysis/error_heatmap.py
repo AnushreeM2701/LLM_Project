@@ -14,7 +14,7 @@ from matplotlib.patches import FancyBboxPatch
 FILE_PATH = "data/results/experiment_results.xlsx"
 SHEET_NAME = "Experiment Results"
 
-OUTPUT_DIR = "output"
+OUTPUT_DIR = "outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ==========================================================
