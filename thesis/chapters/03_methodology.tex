@@ -1,0 +1,54 @@
+\chapter{Statistical Methodology}
+\label{chap:methodology}
+
+% YOU WRITE THIS CHAPTER. This is the mathematical/statistical detail
+% chapter your outline calls for -- ask me to explain the mechanics of any
+% test below (assumptions, what the null hypothesis is, why it's the right
+% test for that RQ) before you write it up.
+
+\section{Dataset Construction}
+\label{sec:dataset}
+% Composition table (Category x Difficulty), source of each tier
+% (Hendrycks Easy/Medium, AIME Hard), why Hard is AIME-only (ask me for
+% the accuracy-gap evidence that justified this), why category counts
+% are unbalanced in Hard and how that's handled (covariate, not trimming).
+
+\section{Models}
+% Which 3 models, why non-reasoning-native matters for RQ3 specifically
+% (ask me to explain the confound this avoids), what's held constant
+% across CoT/ToT and why.
+
+\section{Prompting Strategies}
+\subsection{Chain-of-Thought}
+\subsection{Tree-of-Thought Design}
+% Branch count, why branch generation needs a non-zero temperature (ask
+% me to explain -- it's about search diversity, not an arbitrary choice),
+% the selection step, total call cost vs CoT.
+
+\section{Answer Evaluation}
+% How correctness is determined -- ask me to explain the normalisation
+% pipeline (LaTeX fractions, symbolic equivalence via SymPy, etc.) so you
+% can describe it accurately rather than guessing.
+
+\section{Research Questions and Statistical Tests}
+% RQ1: chi-square / Fisher's exact test of independence -- what's being
+%      tested, what the contingency table looks like.
+% RQ2: Kruskal-Wallis -- why this test for comparing >2 groups of a
+%      non-normal distribution (error-location-normalised-by-step-count).
+% RQ3: McNemar's exact test -- why this is the correct test for a PAIRED
+%      binary outcome (same question, same model, two conditions), and
+%      why comparing raw accuracy percentages would be wrong here.
+
+\section{Error Judging Methodology}
+% Primary judge design (evaluates reasoning on its own merits, not vs a
+% reference solution -- ask me why that framing was chosen), the
+% conflict-of-interest problem (Gemini judges Gemini), and the neutral-
+% judge validation design (Cohen's kappa, what it measures and why raw
+% agreement rate alone wouldn't be enough).
+
+\section{Limitations}
+\label{sec:limitations}
+% Ask me to walk through: the reasoning-effort confound (controlled, not
+% eliminated), AIME contamination risk, judge conflict of interest, fixed
+% ToT branch count as a cost/thoroughness tradeoff, small Hard-tier
+% category Ns, and the pending human-vs-automatic grading validation.

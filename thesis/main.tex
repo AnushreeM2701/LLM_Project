@@ -1,0 +1,247 @@
+\documentclass[a4paper,11pt,twoside]{report}
+
+% ==========================================================
+% TITLE / AUTHOR -- fill these in yourself (see coordinator's
+% MScThesisTemplate.tex for the pattern this follows).
+% ==========================================================
+\newcommand{\theTitle}{A Statistical Study of Mathematical Reasoning Errors in Large Language Models using Tree-of-Thought Reasoning}
+\newcommand{\theShortTitle}{Mathematical Reasoning Errors in LLMs}
+\newcommand{\theAuthor}{Anushree Mahesha}
+\newcommand{\theShortAuthor}{A Mahesha}
+% TODO: confirm your exact Department name, MSc programme title, and
+% supervisor's name/title with your coordinator -- placeholders below.
+\newcommand{\theDepartment}{Department of TODO}
+\newcommand{\theProgramme}{MSc in TODO}
+\newcommand{\theSupervisor}{Dr TODO}
+
+% Bibliography style -- classic bibtex + abbrv, matching the coordinator's
+% template exactly (simpler and faster to compile than biblatex+biber).
+\usepackage{cite}
+\bibliographystyle{abbrv}
+
+% Page style
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,outer=2.5cm,inner=2.5cm,includeheadfoot]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\headheight=18pt
+\footskip=24pt
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{}{#1}}
+\fancyhead[RO,LE]{\bfseries \theShortTitle}
+\fancyhead[LO,RE]{\bfseries \rightmark}
+\fancyfoot[C]{\thepage}
+
+% Spacing
+\usepackage{setspace}
+\usepackage{parskip}
+
+% Maths typesetting
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{booktabs}
+
+% Graphics -- figures can go in ./Figures/, or point directly at the
+% project's generated outputs so regenerated figures don't need copying.
+\usepackage{graphicx}
+\graphicspath{{./}{./Figures/}{../outputs/figures/}}
+
+% TikZ/pgfplots, as in the coordinator's template
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usetikzlibrary{calc}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{patterns}
+\usetikzlibrary{shapes}
+\usetikzlibrary{positioning}
+
+\usepackage[english]{babel}
+\usepackage{hhline}
+
+% User-defined commands, as in the coordinator's template
+\newcommand{\dee}{\mathrm{d}}
+\newcommand{\Dee}{\mathrm{D}}
+\newcommand{\diff}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}}
+\newcommand{\ddiff}[2]{\frac{\mathrm{d}^2 #1}{\mathrm{d} #2^2}}
+\newcommand{\pdiff}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pddiff}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+\newcommand{\mdiff}[2]{\frac{\mathrm{D} #1}{\mathrm{D} #2}}
+\newcommand{\ie}{\emph{i.e.}\ }
+\newcommand{\eg}{\emph{e.g.}\ }
+\newcommand{\etc}{\emph{etc.}}
+\newcommand{\etal}{\emph{et al.}\ }
+\newcommand{\etalp}{\emph{et al.}}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+
+\usepackage{hyperref}
+\hypersetup{
+    unicode=true,
+    pdftoolbar=true,
+    pdfmenubar=true,
+    pdffitwindow=true,
+    pdftitle={\theTitle},
+    pdfauthor={\theShortAuthor},
+    pdfnewwindow=true,
+    colorlinks=true,
+    linkcolor=red,
+    citecolor=red,
+    filecolor=blue,
+    urlcolor=blue,
+}
+
+\title{\theTitle}
+\author{\theAuthor}
+\date{\today}
+
+\begin{document}
+
+\singlespacing
+
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+    \quad
+    \vspace{1.25cm}
+    \begin{center}
+        \includegraphics[scale=0.2]{UL_logo.png}
+    \end{center}
+
+    \begin{center}
+        \vspace{1.5cm}
+        \begin{minipage}{0.8\textwidth}
+            \begin{center}
+                \LARGE \bfseries \theTitle \\
+            \end{center}
+        \end{minipage}
+
+        \vspace{2.5cm}
+        \vspace{3.5cm}
+
+        \begin{minipage}{0.8\textwidth}
+            \begin{center}
+                \Large \theAuthor \\
+                \large \theDepartment \\
+                University of Limerick \\
+                \vspace{0.5cm}
+                \large Supervisor \\
+                \theSupervisor
+            \end{center}
+        \end{minipage}
+
+        \vspace{2.5cm}
+
+        \begin{minipage}{0.8\textwidth}
+            \begin{center}
+                \large MSc Thesis \\
+                \textit{\theProgramme} \\
+                \today
+            \end{center}
+        \end{minipage}
+
+        \vfill
+    \end{center}
+\end{titlepage}
+
+\onehalfspacing
+\hypersetup{pageanchor=true}
+\setcounter{page}{1}
+\pagenumbering{roman}
+
+% ---------- Declaration ----------
+\fancyhead[LO,RE]{\bfseries Declaration}
+\chapter*{Declaration}
+\addcontentsline{toc}{chapter}{Declaration}
+I hereby declare that this dissertation is entirely my own work and has not
+been submitted, in whole or in part, for any other academic award at this
+or any other institution. Where the work of others has been used or
+referenced, it has been fully acknowledged.
+
+\vspace{2cm}
+\noindent Signed: \underline{\hspace{6cm}} \quad Date: \underline{\hspace{4cm}}
+
+\newpage
+
+% ---------- Acknowledgements ----------
+\fancyhead[LO,RE]{\bfseries Acknowledgements}
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+% TODO: write yourself.
+
+\newpage
+
+% ---------- Abstract (≤200 words per the MSc outline) ----------
+\fancyhead[LO,RE]{\bfseries Abstract}
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+% TODO: write yourself, last, once Results/Discussion are final. Max 200 words.
+
+\vspace{30pt}
+\emph{\textbf{Keywords:} Large Language Models, Mathematical Reasoning, Chain-of-Thought, Tree-of-Thought, Error Analysis}
+
+\newpage
+
+\parskip=12pt
+
+\fancyhead[LO,RE]{\bfseries Contents}
+\addcontentsline{toc}{chapter}{Table of contents}
+\tableofcontents
+
+\newpage
+\fancyhead[LO,RE]{\bfseries List of figures}
+\addcontentsline{toc}{chapter}{List of figures}
+\listoffigures
+
+\newpage
+\fancyhead[LO,RE]{\bfseries List of tables}
+\addcontentsline{toc}{chapter}{List of tables}
+\listoftables
+
+\newpage
+\fancyhead[LO,RE]{\bfseries List of Abbreviations}
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+\begin{tabular}{ll}
+    AIME & American Invitational Mathematics Examination \\
+    CoT  & Chain-of-Thought \\
+    LLM  & Large Language Model \\
+    RQ   & Research Question \\
+    ToT  & Tree-of-Thought \\
+\end{tabular}
+
+\newpage
+\fancyhead{}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancyhead[LO,RE]{\bfseries \leftmark}
+\fancyhead[RO,LE]{\bfseries \theShortTitle}
+
+\pagenumbering{arabic}
+
+% ==========================================================
+% CHAPTERS -- per the MSc outline: Introduction, Literature Review,
+% Statistical/Mathematical Methodology, Application/Case Study, Results,
+% Discussion & Conclusions.
+% ==========================================================
+\input{chapters/01_introduction}
+\input{chapters/02_literature_review}
+\input{chapters/03_methodology}
+\input{chapters/04_case_study}
+\input{chapters/05_results}
+\input{chapters/06_discussion}
+\input{chapters/07_conclusion}
+
+% ==========================================================
+% BIBLIOGRAPHY
+% ==========================================================
+\newpage
+\addcontentsline{toc}{chapter}{Bibliography}
+\fancyhead[RO,LE]{\bfseries Bibliography}
+\bibliography{references}
+
+% ==========================================================
+% APPENDICES -- calculations, program listings, output, per the MSc outline.
+% ==========================================================
+\appendix
+\input{chapters/appendix}
+
+\end{document}

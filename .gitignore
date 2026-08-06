@@ -16,3 +16,7 @@ __pycache__/
 
 # Log Files
 *.log
+
+# Local upload artifacts (redundant with tracked source, goes stale)
+thesis.zip
+app.zip

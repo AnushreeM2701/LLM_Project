@@ -1,0 +1,16 @@
+Model,Difficulty,Correct,N,Mean Step Count,Median Step Count
+gemini,Easy,True,76,4.7894736842105265,5.0
+gemini,Easy,False,4,4.5,4.5
+gemini,Medium,True,79,5.468354430379747,5.0
+gemini,Medium,False,1,7.0,7.0
+gemini,Hard,True,55,7.8545454545454545,7.0
+gemini,Hard,False,47,7.76595744680851,7.0
+groq,Easy,True,80,3.6125,3.0
+groq,Medium,True,80,3.9875,4.0
+groq,Hard,True,66,5.954545454545454,6.0
+groq,Hard,False,36,6.138888888888889,6.0
+mistral,Easy,True,78,5.628205128205129,5.0
+mistral,Easy,False,2,4.5,4.5
+mistral,Medium,True,80,6.0125,4.0
+mistral,Hard,True,56,13.678571428571429,8.0
+mistral,Hard,False,46,16.17391304347826,12.5

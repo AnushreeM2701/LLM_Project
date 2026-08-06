@@ -1,0 +1,32 @@
+\chapter{Application and Case Study}
+\label{chap:case_study}
+
+% YOU WRITE THIS CHAPTER. Per your outline: "detailed introduction &
+% analysis of data." This is where the dataset and experimental pipeline
+% get described concretely, and where code/pipeline detail that's too
+% long for the main text should be pointed at the Appendix instead of
+% included inline.
+
+\section{Data Introduction}
+% Walk through the actual 131-question dataset concretely: where each
+% tier came from, how many questions, what a typical question/ground
+% truth looks like (a worked example or two makes this section much
+% stronger than just the summary table already in Chapter~\ref{chap:methodology}).
+
+\section{Experimental Pipeline}
+% How the 786 (131 questions x 3 models x 2 prompt types) responses were
+% actually collected -- ask me to explain the resumable/checkpointed
+% design and why it mattered practically (e.g. provider daily quotas
+% being hit and recovering mid-collection).
+
+\section{Data Quality Assurance}
+% This is worth a section: describe the correctness-invariant check that
+% caught real answer-extraction bugs during error classification, and
+% how each was found/fixed/verified. Ask me to walk you through the
+% specific examples (e.g. the "\dfrac" LaTeX macro bug, the embedded-
+% ordinal-number bug) so you can describe the actual failure and fix in
+% your own words -- this is a genuine methodological strength worth
+% reporting properly, not a footnote.
+
+\section{Reproducibility}
+% Point to the Appendix for the code listing / repository reference.

@@ -1,0 +1,37 @@
+\chapter{Results}
+\label{chap:results}
+
+% BLOCKED: waiting on (1) the neutral-judge validation run to finish, and
+% (2) re-running src/analysis/*.py against the corrected, fully-classified
+% dataset -- the existing outputs/tables/*.csv and outputs/figures/*.png
+% are stale (generated before this session's 17 answer-correctness fixes
+% and before error classification completed). Structure below is ready to
+% fill in once that's done.
+
+\section{Overall Accuracy}
+% Descriptive accuracy by model, prompt type, difficulty tier, category.
+% Source: outputs/tables/accuracy_by_model_prompt.csv,
+% accuracy_by_model_category.csv, accuracy_by_model_prompt_difficulty.csv.
+
+\section{RQ1 -- Error Type Distribution}
+% Source: outputs/tables/rq1_error_distribution.csv,
+% rq1_error_type_by_model.csv, rq1_independence_test.csv (chi-square/Fisher).
+% Include the error-subtype qualitative examples already surfaced during
+% classification (Section~\ref{sec:data-quality} discusses the process;
+% this section reports the outcome).
+
+\section{RQ2 -- Error Location}
+% Source: outputs/tables/rq2_error_position_summary.csv,
+% rq2_error_position_detail.csv, rq2_kruskal_wallis.csv.
+
+\section{RQ3 -- CoT vs.\ ToT}
+% Source: outputs/tables/rq3_prompt_comparison.csv (McNemar per model).
+
+\section{Judge Agreement}
+% Source: outputs/stats/judge_agreement_summary.csv (Cohen's kappa, raw
+% agreement rate) and judge_agreement_detail.csv.
+
+\section{Execution Time}
+% Source: outputs/tables/execution_time_summary.csv and
+% outputs/figures/execution_time_by_question_{cot,tot}.png,
+% execution_time_by_difficulty_{cot,tot}.png.
