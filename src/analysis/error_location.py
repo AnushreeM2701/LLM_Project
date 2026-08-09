@@ -1,16 +1,7 @@
 """
-RQ2: At what step in the reasoning chain do errors occur?
-
-This module didn't exist at all in the prior pipeline — the judge already
-collected `Error Step`, but nothing ever analyzed it, leaving one of only
-three research questions with zero supporting analysis despite having the
-underlying data. This is the fix.
-
-Raw step number isn't comparable across responses of different lengths
-("error at step 3 of 4" and "error at step 3 of 12" mean very different
-things), so the primary measure here is the NORMALIZED error position:
-Error Step / Step Count, in [0, 1] — how far through the response the
-first error occurred, independent of response length.
+RQ2: At what step in the reasoning chain do errors occur? Uses normalized
+error position (Error Step / Step Count, in [0, 1]) so responses of
+different lengths are comparable.
 """
 
 import os

@@ -1,9 +1,6 @@
 """
-RQ1: What are the most common types of mathematical reasoning errors?
-
-Descriptive error-type distribution plus a chi-square (or Fisher's exact,
-for small tables) test of independence on Model x Error Type, so "error
-profiles differ by model" is a tested claim, not just an eyeballed table.
+RQ1: error-type distribution + chi-square/Fisher's exact independence
+test on Model x Error Type.
 """
 
 import os

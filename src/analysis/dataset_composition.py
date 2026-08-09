@@ -1,15 +1,7 @@
 """
-Dataset composition chart: one wedge per category, sized proportionally to
-its actual question count (NOT equal wedges) -- the Hard tier is
-deliberately unbalanced across category (see docs/methodology.md: Probability
-tops out at 8 curated AIME questions vs. 16 for Algebra/Combinatorics), so an
-artificially even-quartered chart would misrepresent the real composition.
-
-Each wedge is also labelled with its exact Total and Easy/Medium/Hard
-counts, so the reader isn't left eyeballing slice angles to compare
-categories whose totals are fairly close (36/31/28/36) -- per the general
-guidance that pie/donut charts should carry their numbers directly when
-segment sizes are close enough to be hard to compare by eye alone.
+Dataset composition chart: one wedge per category, sized by actual question
+count (Hard tier is deliberately unbalanced across category -- see
+docs/methodology.md). Each wedge labels its exact Total/Easy/Medium/Hard counts.
 """
 
 import os

@@ -1,18 +1,6 @@
 """
-Execution time by model/prompt/difficulty. Ported from the prior pipeline's
-app/analysis/execution_time*.py, consolidated into one module and fixed to
-read the canonical results file exclusively via src.utils.io.load_results()
-(the prior pipeline had two of these scripts silently reading a stale
-duplicate file — see docs/limitations.md).
-
-Note (see config.config.TOT_BRANCH_COUNT): ToT execution time now includes
-all branch-generation calls plus the selection call, so it is expected to
-run several times longer than CoT by construction, not as a finding — this
-is reported for completeness/transparency, not as an RQ.
-
-Per-question figures (with the Easy/Medium/Hard breakdown) live in
-src/analysis/question_execution_time.py -- this module only produces the
-summary table.
+Execution time summary table by model/prompt/difficulty. Per-question
+figures live in question_execution_time.py.
 """
 
 import os

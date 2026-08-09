@@ -1,0 +1,12 @@
+Error Type,Easy,Medium,Hard,Total
+Combinatorial Counting Error,1,1,8,10
+Incomplete Reasoning,0,0,3,3
+Incorrect Assumption,0,0,1,1
+Number Theory Error,0,0,1,1
+Probability Reasoning Error,0,0,2,2
+Logical Reasoning Error,0,0,1,1
+Formula Misapplication,0,0,1,1
+Arithmetic Error,1,0,1,2
+Algebraic Manipulation Error,0,0,1,1
+Other,0,0,1,1
+Total incorrect,2,1,20,23

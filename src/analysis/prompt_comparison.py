@@ -1,13 +1,6 @@
 """
-RQ3: Does ToT reduce final-answer errors compared to CoT?
-
-Per-model McNemar's exact test on paired (same question) CoT vs ToT
-correctness — not just raw accuracy percentages. During the methodology
-review this distinction mattered: raw percentages alone suggested "all
-three models show a small, similar prompt effect," but the paired test
-showed only one model's CoT-over-ToT gap was actually distinguishable from
-chance (see docs/limitations.md for the full result once this is re-run on
-new-model data).
+RQ3: Does ToT reduce final-answer errors compared to CoT? Per-model
+McNemar's exact test on paired (same question) CoT vs ToT correctness.
 """
 
 import os

@@ -1,14 +1,5 @@
 """
 Descriptive accuracy tables with Wilson confidence intervals.
-
-Reads the canonical results file ONLY, via src.utils.io.load_results() —
-this is what makes the old pipeline's "two figures built from a stale
-duplicate file" bug structurally impossible here: there is no other path
-this module could point at.
-
-Hard-tier numbers are reported per-Source (AIME) since Hard is AIME-only in
-this pipeline (see docs/methodology.md) — no more averaging incompatible
-constructs into one number.
 """
 
 import os

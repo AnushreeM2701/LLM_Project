@@ -1,14 +1,6 @@
 """
-RQ1 supplement: Model x Difficulty x Error Type heatmap, for the top 6 most
-common error categories, plotted separately for CoT and ToT on a shared
-colour scale so the two are visually comparable.
-
-Note on sparsity: with 136 total errors spread across 3 models x 3
-difficulty tiers x 6 categories x 2 prompts, only 38/108 cells are
-populated (many legitimate zeros). Zeros are shown explicitly rather than
-left blank, since "no errors of this type observed" is itself informative
-here, not missing data -- but this sparsity is worth naming as a
-limitation on small-N subgroup comparisons if you discuss this figure.
+RQ1 supplement / dashboard "Error Heatmap" counterpart: Model x Difficulty x
+Error Type (top 6), balanced 40/40/40 pool, CoT vs ToT on a shared scale.
 """
 
 import os
@@ -20,11 +12,22 @@ import pandas as pd
 
 from config.config import FIGURES_DIR, MODEL_NAMES, DIFFICULTIES, PROMPT_TYPES
 from src.utils.io import load_results
+from src.analysis.question_execution_time import hard_tier_question_pool
 
 TOP_N = 6
 
 # Sequential single-hue (blue) ramp, light -> dark.
 CMAP = plt.cm.Blues
+
+
+def balanced_question_pool(df: pd.DataFrame) -> dict:
+    """Same 40/40/40 pool used by question_execution_time.py."""
+
+    return {
+        "Easy": sorted(df[df["Difficulty"] == "Easy"]["Question ID"].unique()),
+        "Medium": sorted(df[df["Difficulty"] == "Medium"]["Question ID"].unique()),
+        "Hard": hard_tier_question_pool(df),
+    }
 
 
 def top_error_types(n: int = TOP_N) -> list:
@@ -35,13 +38,13 @@ def top_error_types(n: int = TOP_N) -> list:
     return errors["Error Type"].value_counts().head(n).index.tolist()
 
 
-def model_difficulty_by_category_grid(prompt: str, categories: list) -> pd.DataFrame:
+def model_difficulty_by_category_grid(prompt: str, categories: list, df: pd.DataFrame, pool: dict) -> pd.DataFrame:
 
-    df = load_results()
     errors = df[
         (df["Answer Correct"].astype(str).str.lower() == "false")
         & (df["Prompt"] == prompt)
         & (df["Error Type"].isin(categories))
+        & df.apply(lambda r: r["Question ID"] in pool[r["Difficulty"]], axis=1)
     ]
 
     row_index = pd.MultiIndex.from_product(
@@ -56,8 +59,11 @@ def model_difficulty_by_category_grid(prompt: str, categories: list) -> pd.DataF
 
 def plot_error_heatmaps() -> None:
 
+    df = load_results()
+    pool = balanced_question_pool(df)
+
     categories = top_error_types()
-    grids = {p: model_difficulty_by_category_grid(p, categories) for p in PROMPT_TYPES}
+    grids = {p: model_difficulty_by_category_grid(p, categories, df, pool) for p in PROMPT_TYPES}
 
     vmax = max(g.values.max() for g in grids.values())
     n_rows = len(MODEL_NAMES) * len(DIFFICULTIES)
@@ -65,10 +71,6 @@ def plot_error_heatmaps() -> None:
 
     fig, axes = plt.subplots(1, len(PROMPT_TYPES), figsize=(15, 8), sharey=False)
 
-    # Row labels show only the difficulty; the model name is written once
-    # per group (see the blended-transform ax.text block below), matching
-    # the grouped-header style of the reference figure this was modelled on
-    # rather than repeating "Gemini" on every one of its three rows.
     row_labels = DIFFICULTIES * len(MODEL_NAMES)
 
     for ax, prompt in zip(axes, PROMPT_TYPES):
@@ -82,17 +84,14 @@ def plot_error_heatmaps() -> None:
         ax.set_yticklabels(row_labels, fontsize=8)
         ax.set_title(prompt.upper(), fontsize=11, fontweight="bold")
 
-        # Model name written once, bold, vertically centred on its group of
-        # three difficulty rows, positioned left of the difficulty labels
-        # via a transform blending axes-fraction x with data-coordinate y.
+        # Model name centred once per its 3-row difficulty group.
         trans = mtransforms.blended_transform_factory(ax.transAxes, ax.transData)
         for group_idx, model in enumerate(MODEL_NAMES):
             center_row = group_idx * n_diff + (n_diff - 1) / 2
             ax.text(-0.30, center_row, model.capitalize(), transform=trans,
                      fontweight="bold", fontsize=9, ha="left", va="center")
 
-        # Direct labels on every cell, including explicit zeros -- see
-        # module docstring on why zeros are shown rather than left blank.
+        # Zeros shown explicitly -- "no errors observed" is informative here.
         for i in range(grid.shape[0]):
             for j in range(grid.shape[1]):
                 value = grid.values[i, j]
@@ -112,14 +111,15 @@ def plot_error_heatmaps() -> None:
         ax.grid(which="minor", color="white", linewidth=1)
         ax.tick_params(which="minor", length=0)
 
-        # Thicker separators between models (every 3 rows = one model's
-        # Easy/Medium/Hard group) so the Model grouping reads clearly.
+        # Thicker separator every 3 rows (one model's Easy/Medium/Hard group).
         for boundary in range(len(DIFFICULTIES), n_rows, len(DIFFICULTIES)):
             ax.axhline(boundary - 0.5, color="white", linewidth=3)
 
     fig.colorbar(im, ax=axes, shrink=0.7, label="Error count", pad=0.02)
-    fig.suptitle(f"Top {TOP_N} Error Types by Model and Difficulty (CoT vs. ToT)",
-                 fontsize=13, fontweight="bold")
+    fig.suptitle(
+        f"RQ1 - Error Heatmap (Model x Difficulty x Error Type) - "
+        f"40 Easy + 40 Medium + 40 Hard = 120 questions",
+        fontsize=13, fontweight="bold")
 
     os.makedirs(FIGURES_DIR, exist_ok=True)
     path = os.path.join(FIGURES_DIR, "error_heatmap_top6_by_prompt.png")

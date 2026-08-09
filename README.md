@@ -55,7 +55,10 @@ LLM_Project
 ├── outputs/
 │   ├── figures/
 │   ├── tables/
-│   └── stats/                 # judge-agreement / inferential test results (unpopulated -- see note above)
+│   ├── stats/                 # judge-agreement / inferential test results (unpopulated -- see note above)
+│   └── interactive/
+│       ├── dashboard.html     # self-contained interactive dashboard (open directly, no server)
+│       └── build/              # dashboard source (template + data + vendored Chart.js) + build script
 ├── thesis/                   # LaTeX dissertation source (University of Limerick MSc template)
 ├── requirements.txt
 └── README.md
@@ -117,19 +120,45 @@ Run the statistical analysis (RQ1/RQ2/RQ3 + execution time), each writing to `ou
 
 ```bash
 python -m src.analysis.descriptive
-python -m src.analysis.error_taxonomy           # RQ1 (table + overall + per-model figures)
+python -m src.analysis.error_taxonomy           # RQ1 (overall ranking + chi-square/Fisher independence test)
+python -m src.analysis.error_type_distribution  # Error Type x Difficulty, per model/prompt, balanced 40/40/40 pool
+python -m src.analysis.error_type_frequency     # Error Type frequency by model, Hard tier, common-wrong-question pool
+python -m src.analysis.error_heatmap            # Model x Difficulty x top-6 Error Type heatmap, balanced pool
 python -m src.analysis.error_location           # RQ2
 python -m src.analysis.prompt_comparison        # RQ3
 python -m src.analysis.execution_time           # summary table
 python -m src.analysis.question_execution_time  # per-question execution time figures
 python -m src.analysis.question_correctness     # per-question correctness heatmaps + hardest-questions ranking
+python -m src.analysis.error_subtype_words      # error-description word frequency, Hard tier, common-wrong-question pool
 python -m src.analysis.dataset_composition      # dataset composition figure
 ```
+
+`error_type_distribution`, `error_type_frequency`, `error_heatmap`, `error_subtype_words`, `question_execution_time`, `step_count`, and `dataset_composition` are the exact static (PNG) counterparts of the panels in the interactive dashboard below — same balanced question pools, same common-wrong-question intersections, same whole-number axes, cross-checked against the dashboard's live output.
 
 Run tests:
 
 ```bash
 pytest tests/
+```
+
+---
+
+## Viewing the Interactive Dashboard
+
+`outputs/interactive/dashboard.html` is a single, fully self-contained file (Chart.js and all result data are embedded directly in it — no fetch/XHR calls), so it never needs a local server or a Live Server extension. Open it directly:
+
+```bash
+open outputs/interactive/dashboard.html
+```
+
+(On Windows/Linux, double-click the file or use `start outputs/interactive/dashboard.html` / `xdg-open outputs/interactive/dashboard.html`.)
+
+### Rebuilding it
+
+The dashboard's source lives in `outputs/interactive/build/` (`dashboard_template.html` + `dashboard_data.json` + the vendored `chart.umd.min.js`). If any of those change, regenerate `outputs/interactive/dashboard.html` with:
+
+```bash
+python outputs/interactive/build/build_dashboard.py
 ```
 
 ---

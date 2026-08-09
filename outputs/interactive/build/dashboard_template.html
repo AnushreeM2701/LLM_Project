@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LLM Math Reasoning — Analysis Dashboard</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; background: #ffffff; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 18px; }
+  .controls { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; background: #f6f7f9; border: 1px solid #e2e4e8; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; }
+  .control { display: flex; flex-direction: column; gap: 4px; }
+  .control label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #555; }
+  select { font-size: 14px; padding: 6px 10px; border-radius: 5px; border: 1px solid #c7cad1; background: #fff; min-width: 170px; }
+  select:disabled { background: #eee; color: #999; }
+  .na-note { font-size: 11px; color: #999; font-style: italic; margin-top: 2px; }
+  .panel-title { font-size: 16px; font-weight: 700; margin: 4px 0 2px; }
+  .panel-desc { font-size: 12.5px; color: #666; margin-bottom: 14px; line-height: 1.5; }
+  .chart-wrap { position: relative; width: 100%; }
+  .model-block { margin-bottom: 22px; }
+  .model-label { font-size: 13px; font-weight: 700; margin: 18px 0 6px; }
+  .legend-row { display: flex; gap: 16px; margin: 6px 0 14px; font-size: 11.5px; color: #555; flex-wrap: wrap; }
+  .legend-row span { display: inline-flex; align-items: center; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .sq { width: 10px; height: 10px; display: inline-block; }
+  .stats-box { background: #f6f7f9; border: 1px solid #e2e4e8; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 12.5px; }
+  .stats-box a { color: #2a78d6; text-decoration: none; word-break: break-all; }
+  .stats-box a:hover { text-decoration: underline; }
+  .stats-box h3 { font-size: 12px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.03em; color: #555; }
+  .insight-box { background: linear-gradient(135deg, #eef4ff, #f5f0ff); border: 1px solid #c9d9f7; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
+  .insight-box h3 { font-size: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.04em; color: #3a4b8f; }
+  .insight-box ul { margin: 0; padding-left: 20px; }
+  .insight-box li { font-size: 13px; line-height: 1.6; color: #2a2f45; margin-bottom: 4px; }
+  .insight-box li b { color: #1a3a8f; }
+  table.stats-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  table.stats-table th, table.stats-table td { border: 1px solid #dde0e5; padding: 5px 8px; text-align: center; }
+  table.stats-table th { background: #eef0f3; font-weight: 600; }
+  .heat-table { border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+  .heat-table th, .heat-table td { border: 1px solid #fff; padding: 4px 7px; text-align: center; min-width: 34px; }
+  .heat-table th { background: #eef0f3; font-weight: 600; font-size: 10px; }
+  .heat-table td.qid { background: #f6f7f9; text-align: left; font-weight: 600; min-width: 110px; font-size: 10.5px; }
+  .heat-table td.correct { background: #0ca30c; color: #fff; }
+  .heat-table td.incorrect { background: #d03b3b; color: #fff; }
+  .heat-scroll { overflow-x: auto; max-width: 100%; }
+</style>
+</head>
+<body>
+
+<h1>LLM Mathematical Reasoning — Analysis Dashboard</h1>
+<div class="subtitle">786 experiments &middot; 3 models &middot; 2 prompting strategies (CoT / ToT) &middot; 131 questions across Easy/Medium/Hard tiers</div>
+
+<div class="controls">
+  <div class="control">
+    <label for="analysisSelect">Analysis</label>
+    <select id="analysisSelect"></select>
+  </div>
+  <div class="control">
+    <label for="modelSelect">Model</label>
+    <select id="modelSelect">
+      <option value="all">All models</option>
+      <option value="gemini">Gemini (gemini-3.5-flash-lite)</option>
+      <option value="groq">GPT-OSS-120B (Groq, openai/gpt-oss-120b)</option>
+      <option value="mistral">Mistral Large (mistral-large-latest)</option>
+    </select>
+    <div class="na-note" style="color:#888">mistral-large-latest resolved to Mistral Large 3 (mistral-large-2512) for these experiments (Aug 2026) — the alias is a moving target and would point to a newer model if re-run later.</div>
+    <div class="na-note" id="modelNote"></div>
+  </div>
+  <div class="control">
+    <label for="promptSelect">Prompt</label>
+    <select id="promptSelect">
+      <option value="all">Both (CoT + ToT)</option>
+      <option value="cot">Chain-of-Thought</option>
+      <option value="tot">Tree-of-Thought</option>
+    </select>
+    <div class="na-note" id="promptNote"></div>
+  </div>
+  <div class="control">
+    <label for="difficultySelect">Difficulty</label>
+    <select id="difficultySelect">
+      <option value="all">All difficulties</option>
+      <option value="Easy">Easy</option>
+      <option value="Medium">Medium</option>
+      <option value="Hard">Hard</option>
+    </select>
+    <div class="na-note" style="color:#888">Easy = Hendrycks Level 1 &amp; 2 &middot; Medium = Hendrycks Level 3 &amp; 4 &middot; Hard = AIME exam paper questions</div>
+    <div class="na-note" id="difficultyNote"></div>
+  </div>
+  <div class="control">
+    <label for="correctnessSelect">Answer</label>
+    <select id="correctnessSelect">
+      <option value="all">Both (Correct + Incorrect)</option>
+      <option value="true">Correct only</option>
+      <option value="false">Incorrect only</option>
+    </select>
+    <div class="na-note" id="correctnessNote"></div>
+  </div>
+</div>
+
+<div class="panel-title" id="panelTitle"></div>
+<div class="panel-desc" id="panelDesc"></div>
+<div id="panelBody"></div>
+
+<script>
+/*!CHARTJS_LIB*/
+</script>
+<script>
+const DATA = /*!DATA_JSON*/;
+const R = DATA.rowSchema.reduce((acc, name, i) => { acc[name] = i; return acc; }, {});
+
+const MODEL_LABELS = {
+  gemini: "Gemini (gemini-3.5-flash-lite)",
+  groq: "GPT-OSS-120B (Groq, openai/gpt-oss-120b)",
+  mistral: "Mistral Large (mistral-large-latest)",
+};
+const MODEL_NAMES = ["gemini", "groq", "mistral"];
+const MODEL_COLORS = { gemini: "#2a78d6", groq: "#eb6834", mistral: "#1baf7a" };
+const PROMPT_TYPES = ["cot", "tot"];
+const DIFFICULTIES = ["Easy", "Medium", "Hard"];
+const DIFF_COLORS = { Easy: "#0ca30c", Medium: "#fab219", Hard: "#d03b3b" };
+const DIFF_SHAPES = { Easy: "circle", Medium: "rect", Hard: "triangle" };
+const MODEL_SHAPES = { gemini: "circle", groq: "rect", mistral: "triangle" };
+const CATEGORY_COLORS = { "Algebra": "#2a78d6", "Number Theory": "#eb6834", "Probability": "#1baf7a", "Combinatorics": "#eda100" };
+const GOOD = "#0ca30c";
+const CRITICAL = "#d03b3b";
+
+// One-line plain-English meaning of each fixed error-type category (see
+// config.config.ERROR_TYPES / src/evaluation/error_judge.py) -- a
+// predefined, closed taxonomy the judge model must choose from, not
+// categories discovered from the data.
+const ERROR_TYPE_DEFINITIONS = {
+  "Arithmetic Error": "A plain calculation slip — wrong addition/multiplication/etc.",
+  "Algebraic Manipulation Error": "Mistake while simplifying, expanding, or solving an equation (e.g. sign error).",
+  "Probability Reasoning Error": "Misapplied independence, conditional probability, or normalization.",
+  "Combinatorial Counting Error": "Over- or under-counting; wrong permutation vs. combination choice.",
+  "Number Theory Error": "Wrong handling of divisibility, modular arithmetic, parity, or integer properties.",
+  "Formula Misapplication": "Used a real formula, but the wrong one for this situation.",
+  "Incorrect Assumption": "Reasoning relied on something not actually given or true in the problem.",
+  "Logical Reasoning Error": "A flaw in the deduction itself, not tied to a specific math domain.",
+  "Incomplete Reasoning": "Stopped short — didn't finish the steps needed to justify the answer.",
+  "Answer Extraction Error": "The reasoning was fine, but the final answer couldn't be parsed out of it.",
+  "Other": "Catch-all for anything that doesn't fit the categories above.",
+};
+
+// One-line meaning of each word that appears in the Error Subtype Word
+// Frequency charts (Hard tier), grounded in the actual free-text subtype
+// examples -- split conceptually into words describing the NATURE of the
+// mistake (assumed/guessed/failed/missed/counted) vs. words describing the
+// MATH CONCEPT the mistake occurred in (sum/probability/modulo/etc.).
+const WORD_DEFINITIONS = {
+  assumed: "Treated something as true without justifying it.",
+  guessed: "Picked a value or answer without deriving it.",
+  failed: "Didn't complete or find something the solution needed.",
+  missed: "Overlooked a case, value, or condition entirely.",
+  counted: "A counting mistake specifically.",
+  counts: "A counting mistake specifically.",
+  count: "A counting mistake specifically.",
+  analyzing: "The error happened during an analysis step.",
+  sum: "Error in a summation step.",
+  solutions: "Error in counting or finding solutions to an equation.",
+  number: "Error in counting or finding solutions to an equation.",
+  probability: "Error in a probability calculation.",
+  expansion: "Error expanding an algebraic or modular expression.",
+  condition: "Error in a divisibility or derived condition.",
+  intersection: "Error counting or finding intersections (curves, chords).",
+  modulo: "Error in a modular arithmetic step.",
+  arithmetic: "Error in a modular arithmetic step.",
+  maximum: "Error in a maximum-value computation.",
+  cycle: "Error in permutation cycle-counting.",
+  symmetry: "Error in a symmetry argument.",
+  equals: "Error in an equation or equality step.",
+  values: "Error involving specific numeric values.",
+  random: "Error involving random sampling/testing, or a randomness-based concept.",
+  colorings: "Error counting/enumerating valid colorings (combinatorics).",
+  congruences: "Error solving modular congruences.",
+  formula: "Used the wrong formula, or misapplied a real one.",
+  lengths: "Error involving geometric lengths (e.g. arc or chord lengths).",
+  valid: "Error in determining which cases/values are actually valid.",
+};
+
+const ANALYSES = [
+  { id: "error_distribution", label: "Error Type Distribution" },
+  { id: "error_type_frequency", label: "Error Type Frequency Count" },
+  { id: "error_heatmap", label: "Error Heatmap" },
+  { id: "correctness_heatmap", label: "Model Accuracy Matrix" },
+  { id: "execution_time", label: "Execution Time in Seconds" },
+  { id: "step_count", label: "Step Count vs Correctness" },
+  { id: "error_subtype_words", label: "Error Description Word Frequency" },
+  { id: "dataset_composition", label: "Data Composition" },
+];
+
+const analysisSelect = document.getElementById("analysisSelect");
+ANALYSES.forEach(a => {
+  const opt = document.createElement("option");
+  opt.value = a.id; opt.textContent = a.label;
+  analysisSelect.appendChild(opt);
+});
+
+const modelSelect = document.getElementById("modelSelect");
+const promptSelect = document.getElementById("promptSelect");
+const difficultySelect = document.getElementById("difficultySelect");
+const correctnessSelect = document.getElementById("correctnessSelect");
+const modelNote = document.getElementById("modelNote");
+const promptNote = document.getElementById("promptNote");
+const difficultyNote = document.getElementById("difficultyNote");
+const correctnessNote = document.getElementById("correctnessNote");
+const panelTitle = document.getElementById("panelTitle");
+const panelDesc = document.getElementById("panelDesc");
+const panelBody = document.getElementById("panelBody");
+
+let activeCharts = [];
+function destroyCharts() { activeCharts.forEach(c => c.destroy()); activeCharts = []; }
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  Object.entries(attrs || {}).forEach(([k, v]) => {
+    if (k === "style") e.style.cssText = v; else if (k === "class") e.className = v; else e.setAttribute(k, v);
+  });
+  children.forEach(c => {
+    if (c === null || c === undefined || c === false) return;
+    if (c instanceof Node) e.appendChild(c);
+    else e.appendChild(document.createTextNode(String(c)));
+  });
+  return e;
+}
+function canvasBlock(height) {
+  const wrap = el("div", { class: "chart-wrap", style: `height:${height}px` });
+  const canvas = document.createElement("canvas");
+  wrap.appendChild(canvas);
+  return { wrap, canvas };
+}
+function filteredRows() {
+  const model = modelSelect.value, prompt = promptSelect.value, difficulty = difficultySelect.value, correctness = correctnessSelect.value;
+  return DATA.rows.filter(row =>
+    (model === "all" || row[R.model] === model) &&
+    (prompt === "all" || row[R.prompt] === prompt) &&
+    (difficulty === "all" || row[R.difficulty] === difficulty) &&
+    (correctness === "all" || String(row[R.correct]) === correctness)
+  );
+}
+function activeDifficulties() {
+  return difficultySelect.value === "all" ? DIFFICULTIES : [difficultySelect.value];
+}
+function activeCorrectness() {
+  return correctnessSelect.value === "all" ? [true, false] : [correctnessSelect.value === "true"];
+}
+function fmtP(p) {
+  const v = parseFloat(p);
+  return v < 0.001 ? "< 0.001" : v.toFixed(4);
+}
+function setFilterAvailability(opts) {
+  const {
+    model = true, prompt = true, difficulty = true, correctness = false,
+    modelNote: mNote = "", promptNote: pNote = "", difficultyNote: dNote = "", correctnessNote: cNote = "",
+  } = opts || {};
+  modelSelect.disabled = !model;
+  promptSelect.disabled = !prompt;
+  difficultySelect.disabled = !difficulty;
+  correctnessSelect.disabled = !correctness;
+  modelNote.textContent = model ? "" : (mNote || "Not applicable to this view.");
+  promptNote.textContent = prompt ? "" : (pNote || "Not applicable to this view.");
+  difficultyNote.textContent = difficulty ? "" : (dNote || "Not applicable to this view.");
+  correctnessNote.textContent = correctness ? "" : (cNote || "Not applicable to this view.");
+}
+
+// ---------- 1. Error Type Distribution (RQ1) ----------
+function renderErrorDistribution() {
+  setFilterAvailability({ correctnessNote: "Error types only exist for incorrect answers, so this view is incorrect-only by definition." });
+  const model = modelSelect.value, prompt = promptSelect.value;
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+  const difficulties = activeDifficulties();
+
+  panelTitle.textContent = "RQ1 — Distribution of Reasoning Error Types";
+  panelDesc.textContent = "Equal number of Easy, Medium and Hard questions are used (40 each), therefore 40 × 3 = 120 questions in total.";
+
+  panelBody.appendChild(el("div", { class: "insight-box" },
+    el("h3", {}, "What each error type means"),
+    el("ul", {}, ...Object.keys(ERROR_TYPE_DEFINITIONS).map(t => {
+      const li = document.createElement("li");
+      li.innerHTML = `<b>${t}</b> — ${ERROR_TYPE_DEFINITIONS[t]}`;
+      return li;
+    }))
+  ));
+
+  panelBody.appendChild(el("div", { style: "border-top:1px solid #ddd;margin:26px 0 18px" }));
+  panelBody.appendChild(el("div", { style: "font-size:13px;font-weight:700;margin-bottom:2px;" }, "Detailed Tables (respects Model / Prompt / Difficulty filters above)"));
+
+  const selectedRows = DATA.rows.filter(r =>
+    models.includes(r[R.model]) && prompts.includes(r[R.prompt]) && difficulties.includes(r[R.difficulty]) &&
+    DATA.execTimeQuestionPool[r[R.difficulty]].includes(r[R.qid])
+  );
+
+  // Shared error-type ordering (by overall incorrect count within the
+  // current selection) so every table below uses the same row order.
+  const wrongSelected = selectedRows.filter(r => !r[R.correct]);
+  const overallCounts = {};
+  wrongSelected.forEach(r => { overallCounts[r[R.errorType]] = (overallCounts[r[R.errorType]] || 0) + 1; });
+  const errorTypes = Object.entries(overallCounts).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+
+  models.forEach(m => {
+    panelBody.appendChild(el("div", { class: "model-label" }, MODEL_LABELS[m]));
+    prompts.forEach(p => {
+      const rows = selectedRows.filter(r => r[R.model] === m && r[R.prompt] === p);
+      const wrong = rows.filter(r => !r[R.correct]);
+
+      const table = el("table", { class: "stats-table" });
+      table.appendChild(el("tr", {}, el("th", {}, "Error Type"), ...difficulties.map(d => el("th", {}, d)), el("th", {}, "Total")));
+
+      errorTypes.forEach(t => {
+        const counts = difficulties.map(d => wrong.filter(r => r[R.difficulty] === d && r[R.errorType] === t).length);
+        const total = counts.reduce((a, b) => a + b, 0);
+        if (total === 0) return;
+        table.appendChild(el("tr", {}, el("td", {}, t), ...counts.map(c => el("td", {}, String(c))), el("td", { style: "font-weight:700" }, String(total))));
+      });
+
+      const totalRow = difficulties.map(d => wrong.filter(r => r[R.difficulty] === d).length);
+      table.appendChild(el("tr", { style: "font-weight:700;background:#eef0f3" },
+        el("td", {}, "Total incorrect"), ...totalRow.map(c => el("td", {}, String(c))), el("td", {}, String(wrong.length))
+      ));
+
+      panelBody.appendChild(el("div", { class: "model-block" },
+        el("div", { class: "model-label" }, `${p.toUpperCase()} — ${wrong.length} incorrect of ${rows.length} total questions`),
+        el("div", { class: "heat-scroll" }, table)
+      ));
+    });
+  });
+}
+
+// ---------- 1b. Error Type Frequency by Model (Hard tier) ----------
+function renderErrorTypeFrequency() {
+  setFilterAvailability({
+    difficulty: false, correctness: false,
+    difficultyNote: "This view is Hard tier only by design.",
+  });
+
+  const model = modelSelect.value;
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const prompt = promptSelect.value;
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+
+  panelTitle.textContent = "Error Type Frequency by Model — Hard Tier Only";
+  panelDesc.textContent = "Restricted to Hard-tier questions that ALL 3 models got wrong. Hover a bar for its meaning and a real example from this project.";
+
+  prompts.forEach(p => {
+    // Hard-tier questions, within THIS prompt, that ALL 3 models got wrong
+    // -- computed per prompt (not pooled across CoT+ToT) so every model
+    // contributes exactly one row per common-wrong question, giving equal
+    // N across models (matching the Word Frequency panel's methodology).
+    const hardRows = DATA.rows.filter(r => r[R.difficulty] === "Hard" && r[R.prompt] === p);
+    const wrongSets = MODEL_NAMES.map(m => new Set(hardRows.filter(r => r[R.model] === m && !r[R.correct]).map(r => r[R.qid])));
+    const commonWrong = [...wrongSets[0]].filter(qid => wrongSets.every(s => s.has(qid)));
+    const commonWrongRows = hardRows.filter(r => !r[R.correct] && commonWrong.includes(r[R.qid]));
+
+    panelBody.appendChild(el("div", { class: "model-label" }, `${p.toUpperCase()} — ${commonWrong.length} Hard-tier questions wrong for all 3 models`));
+
+    const perModelCounts = {};
+    let sharedMax = 0;
+    MODEL_NAMES.forEach(m => {
+      const modelWrong = commonWrongRows.filter(r => r[R.model] === m);
+      const counts = {};
+      const examples = {};
+      modelWrong.forEach(r => {
+        const t = r[R.errorType];
+        counts[t] = (counts[t] || 0) + 1;
+        if (!examples[t] && r[R.errorSubtype]) examples[t] = r[R.errorSubtype];
+      });
+      perModelCounts[m] = { counts, examples, n: modelWrong.length };
+      sharedMax = Math.max(sharedMax, ...Object.values(counts), 0);
+    });
+    const xMax = Math.ceil(sharedMax * 1.15) || 1;
+
+    models.forEach(m => {
+      const { counts, examples, n } = perModelCounts[m];
+      const ordered = Object.entries(counts).sort((a, b) => a[1] - b[1]);
+
+      const { wrap, canvas } = canvasBlock(Math.max(200, ordered.length * 26));
+      panelBody.appendChild(el("div", { class: "model-block" }, el("div", { class: "model-label" }, `${MODEL_LABELS[m]} (n=${n} errors)`), wrap));
+      const chart = new Chart(canvas, {
+        type: "bar",
+        data: { labels: ordered.map(e => e[0]), datasets: [{ data: ordered.map(e => e[1]), backgroundColor: "#2a78d6", borderColor: "#000", borderWidth: 0.5 }] },
+        options: {
+          indexAxis: "y", responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const type = ctx.label;
+                  const def = ERROR_TYPE_DEFINITIONS[type] || "No definition available.";
+                  const example = examples[type];
+                  const lines = [`Occurrences: ${ctx.raw}`, `Meaning: ${def}`];
+                  if (example) lines.push(`Example (this project): "${example}"`);
+                  return lines;
+                },
+              },
+            },
+          },
+          scales: { x: { min: 0, max: xMax, title: { display: true, text: "Occurrences" }, ticks: { precision: 0 } } },
+        },
+      });
+      activeCharts.push(chart);
+    });
+  });
+}
+
+// ---------- 2. Error Heatmap ----------
+function renderErrorHeatmap() {
+  setFilterAvailability({ correctnessNote: "Error types only exist for incorrect answers, so this view is incorrect-only by definition." });
+  const model = modelSelect.value, prompt = promptSelect.value;
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const difficulties = activeDifficulties();
+
+  // top 6 error types overall (fixed, matches thesis figure)
+  const allErrCounts = {};
+  DATA.rows.filter(r => !r[R.correct]).forEach(r => { allErrCounts[r[R.errorType]] = (allErrCounts[r[R.errorType]] || 0) + 1; });
+  const topTypes = Object.entries(allErrCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
+
+  panelTitle.textContent = "RQ1 — Error Heatmap (Model x Difficulty x Error Type)";
+  panelDesc.textContent = "Equal number of Easy, Medium and Hard questions are used (40 each), therefore 40 × 3 = 120 questions in total.";
+
+  prompts.forEach(p => {
+    const grid = {};
+    models.forEach(m => difficulties.forEach(d => { grid[`${m}|${d}`] = {}; topTypes.forEach(t => grid[`${m}|${d}`][t] = 0); }));
+    DATA.rows.filter(r =>
+      !r[R.correct] && r[R.prompt] === p && models.includes(r[R.model]) && difficulties.includes(r[R.difficulty]) &&
+      topTypes.includes(r[R.errorType]) && DATA.execTimeQuestionPool[r[R.difficulty]].includes(r[R.qid])
+    ).forEach(r => { grid[`${r[R.model]}|${r[R.difficulty]}`][r[R.errorType]]++; });
+
+    let maxV = 0;
+    Object.values(grid).forEach(row => Object.values(row).forEach(v => { if (v > maxV) maxV = v; }));
+
+    const table = el("table", { class: "heat-table" });
+    const axisLabelRow = el("tr", {}, el("th", { style: "background:#fff;border:none" }), el("th", { style: "background:#fff;border:none" }), el("th", { colspan: String(topTypes.length), style: "text-align:center;font-size:12px;font-weight:700;color:#333;text-transform:none;letter-spacing:0;background:#dde4f0;padding:6px" }, "Error Type →"));
+    table.appendChild(axisLabelRow);
+    const thead = el("tr", {}, el("th", {}, "Model"), el("th", {}, "Difficulty"), ...topTypes.map(t => el("th", {}, t)));
+    table.appendChild(thead);
+    models.forEach(m => difficulties.forEach((d, i) => {
+      const row = grid[`${m}|${d}`];
+      const tr = el("tr", {});
+      if (i === 0) tr.appendChild(el("td", { class: "qid", rowspan: String(difficulties.length) }, MODEL_LABELS[m]));
+      tr.appendChild(el("td", { class: "qid" }, d));
+      topTypes.forEach(t => {
+        const v = row[t];
+        const intensity = maxV ? v / maxV : 0;
+        const bg = v === 0 ? "#f6f7f9" : `rgba(42,120,214,${0.15 + intensity * 0.75})`;
+        const color = intensity > 0.55 ? "#fff" : "#222";
+        tr.appendChild(el("td", { style: `background:${bg};color:${color};font-weight:600` }, String(v)));
+      });
+      table.appendChild(tr);
+    }));
+    panelBody.appendChild(el("div", { class: "model-block" },
+      el("div", { class: "model-label" }, p.toUpperCase()),
+      el("div", { class: "heat-scroll" }, table)
+    ));
+  });
+}
+
+// ---------- 5. Correctness Heatmap ----------
+function renderCorrectnessHeatmap() {
+  setFilterAvailability({ correctnessNote: "This view already shows correctness directly (✓/✗ per cell) — filtering to one answer type would hide the comparison." });
+  const model = modelSelect.value, prompt = promptSelect.value, difficulty = difficultySelect.value;
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+  const tiers = difficulty === "all" ? DIFFICULTIES : [difficulty];
+
+  panelTitle.textContent = "Per-Question Correctness Matrix";
+  panelDesc.textContent = "Questions with at least one wrong answer among the currently selected models.";
+
+  const cellMap = {};
+  DATA.rows.forEach(r => { cellMap[`${r[R.qid]}|${r[R.model]}|${r[R.prompt]}`] = r[R.correct]; });
+
+  const fullTierPool = {};
+  DIFFICULTIES.forEach(d => { fullTierPool[d] = [...new Set(DATA.rows.filter(r => r[R.difficulty] === d).map(r => r[R.qid]))].sort(); });
+
+  tiers.forEach(tier => {
+    const pool = fullTierPool[tier];
+
+    panelBody.appendChild(el("div", { class: "model-label" }, `${tier} (n=${pool.length} questions)`));
+
+    prompts.forEach(p => {
+      const rowsWithWrong = pool.filter(qid =>
+        models.some(m => cellMap[`${qid}|${m}|${p}`] === false)
+      );
+
+      if (rowsWithWrong.length === 0) {
+        panelBody.appendChild(el("div", { class: "model-block" }, el("div", { class: "model-label" }, p.toUpperCase()), el("div", {}, "No incorrect answers among the selected models in this tier/prompt.")));
+        return;
+      }
+
+      const table = el("table", { class: "heat-table" });
+      const thead = el("tr", {}, el("th", {}, "Question ID"));
+      models.forEach(m => thead.appendChild(el("th", {}, MODEL_LABELS[m])));
+      table.appendChild(thead);
+
+      rowsWithWrong.forEach(qid => {
+        const tr = el("tr", {}, el("td", { class: "qid" }, qid));
+        models.forEach(m => {
+          const correct = cellMap[`${qid}|${m}|${p}`];
+          tr.appendChild(el("td", { class: correct ? "correct" : "incorrect" }, correct ? "✓" : "✗"));
+        });
+        table.appendChild(tr);
+      });
+
+      const accuracyTable = el("table", { class: "stats-table" });
+      accuracyTable.appendChild(el("tr", {}, el("th", {}, "Model"), el("th", {}, "Accuracy")));
+      models.forEach(m => {
+        const poolCorrect = pool.filter(qid => cellMap[`${qid}|${m}|${p}`] === true).length;
+        const pct = ((poolCorrect / pool.length) * 100).toFixed(1);
+        accuracyTable.appendChild(el("tr", {}, el("td", {}, MODEL_LABELS[m]), el("td", {}, `${pct}%`)));
+      });
+
+      panelBody.appendChild(el("div", { class: "model-block" },
+        el("div", { class: "model-label" }, `${p.toUpperCase()} (${rowsWithWrong.length} of ${pool.length} questions shown)`),
+        el("div", { style: "display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap" },
+          el("div", { class: "heat-scroll" }, table),
+          el("div", { class: "stats-box", style: "margin-top:0;min-width:180px" }, el("h3", {}, "Accuracy"), accuracyTable)
+        )
+      ));
+    });
+  });
+}
+
+// ---------- 6. Execution Time ----------
+const EXEC_TIME_YMAX = 300;
+const EXEC_TIME_OVERFLOW_Y = 292;
+
+function renderExecutionTime() {
+  setFilterAvailability({ correctness: true });
+  const model = modelSelect.value, prompt = promptSelect.value;
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const difficulties = activeDifficulties();
+  const correctnessValues = activeCorrectness();
+
+  panelTitle.textContent = "Execution Time by Question, per Difficulty";
+  panelDesc.textContent = correctnessSelect.value === "all" ? "" :
+    `Showing ${correctnessSelect.value === "true" ? "correct" : "incorrect"} answers only.`;
+
+  panelBody.appendChild(el("div", {
+    style: "display:inline-flex;align-items:center;gap:6px;background:#fff8e1;border:1px solid #f0dca0;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:12px;color:#6b5a1e",
+  },
+    el("span", { style: "font-size:15px;color:#c99a00" }, "▲"),
+    el("span", {}, "= actual value exceeds 300s and is pinned at the top edge — hover any triangle to see the real execution time")
+  ));
+
+  prompts.forEach(p => {
+    panelBody.appendChild(el("div", { class: "model-label" }, p.toUpperCase()));
+    difficulties.forEach(d => {
+      const pool = DATA.execTimeQuestionPool[d];
+      const position = {}; pool.forEach((q, i) => position[q] = i);
+      const rows = DATA.rows.filter(r => r[R.prompt] === p && r[R.difficulty] === d && models.includes(r[R.model]) && pool.includes(r[R.qid]) && correctnessValues.includes(r[R.correct]));
+
+      const { wrap, canvas } = canvasBlock(280);
+      panelBody.appendChild(el("div", {}, el("div", { style: "font-size:12px;font-weight:600;margin:8px 0 2px;color:#444" }, `${d} (n=${pool.length} questions)`), wrap));
+      const datasets = models.map(m => {
+        const modelRows = rows.filter(r => r[R.model] === m);
+        const points = modelRows.map(r => {
+          const actual = r[R.execTime];
+          const overflow = actual > EXEC_TIME_YMAX;
+          return { x: position[r[R.qid]], y: overflow ? EXEC_TIME_OVERFLOW_Y : actual, actual, overflow };
+        });
+        return {
+          label: MODEL_LABELS[m],
+          data: points,
+          backgroundColor: MODEL_COLORS[m], borderColor: "#000", borderWidth: 0.5,
+          pointStyle: points.map(pt => pt.overflow ? "triangle" : "circle"),
+          radius: points.map(pt => pt.overflow ? 6 : 4),
+        };
+      });
+      const chart = new Chart(canvas, {
+        type: "scatter",
+        data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: models.length > 1 },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.actual.toFixed(1)}s${ctx.raw.overflow ? " (off scale)" : ""}` } },
+          },
+          scales: {
+            x: {
+              min: -0.5, max: pool.length - 0.5,
+              title: { display: true, text: "Question ID" },
+              afterBuildTicks: (scale) => { scale.ticks = pool.map((_, i) => ({ value: i })); },
+              ticks: { autoSkip: false, maxRotation: 90, minRotation: 90, font: { size: 8 }, callback: (v) => pool[Math.round(v)] ?? "" },
+            },
+            y: { min: 0, max: EXEC_TIME_YMAX, title: { display: true, text: "Execution Time (s)" } },
+          },
+        },
+      });
+      activeCharts.push(chart);
+    });
+  });
+}
+
+// ---------- 7. Step Count ----------
+const STEP_COUNT_YMAX = 50;
+const STEP_COUNT_OVERFLOW_Y = 48.5;
+
+function renderStepCount() {
+  setFilterAvailability({ correctness: true });
+  const model = modelSelect.value, prompt = promptSelect.value;
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const difficulties = activeDifficulties();
+  const correctnessValues = activeCorrectness();
+
+  panelTitle.textContent = "Number of Steps Taken to Derive Each Answer";
+  panelDesc.textContent = "One panel per difficulty tier, x-axis = Question ID, shared Y-axis across every panel. Point shape = Model, point colour = Correctness." +
+    (correctnessSelect.value === "all" ? "" : ` Showing ${correctnessSelect.value === "true" ? "correct" : "incorrect"} answers only.`);
+
+  panelBody.appendChild(el("div", {
+    style: "display:inline-flex;align-items:center;gap:6px;background:#fff8e1;border:1px solid #f0dca0;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:12px;color:#6b5a1e",
+  },
+    el("span", { style: "font-size:15px;color:#c99a00" }, "★"),
+    el("span", {}, "= actual value exceeds 50 steps and is pinned at the top edge — hover any star to see the real step count")
+  ));
+
+  prompts.forEach(p => {
+    panelBody.appendChild(el("div", { class: "model-label" }, p.toUpperCase()));
+    difficulties.forEach(d => {
+      const pool = DATA.execTimeQuestionPool[d];
+      const position = {}; pool.forEach((q, i) => position[q] = i);
+      const rows = DATA.rows.filter(r => r[R.prompt] === p && r[R.difficulty] === d && models.includes(r[R.model]) && pool.includes(r[R.qid]) && correctnessValues.includes(r[R.correct]));
+
+      const { wrap, canvas } = canvasBlock(280);
+      panelBody.appendChild(el("div", {}, el("div", { style: "font-size:12px;font-weight:600;margin:8px 0 2px;color:#444" }, `${d} (n=${pool.length} questions)`), wrap));
+
+      const datasets = [];
+      models.forEach(m => {
+        [[true, GOOD, "Correct"], [false, CRITICAL, "Incorrect"]].filter(([correct]) => correctnessValues.includes(correct)).forEach(([correct, color, status]) => {
+          const group = rows.filter(r => r[R.model] === m && r[R.correct] === correct);
+          if (group.length === 0) return;
+          const points = group.map(r => {
+            const actual = r[R.stepCount];
+            const overflow = actual > STEP_COUNT_YMAX;
+            return { x: position[r[R.qid]], y: overflow ? STEP_COUNT_OVERFLOW_Y : actual, actual, overflow };
+          });
+          datasets.push({
+            label: `${MODEL_LABELS[m]} - ${status}`,
+            data: points,
+            backgroundColor: color, borderColor: "#000", borderWidth: 0.5,
+            pointStyle: points.map(pt => pt.overflow ? "star" : MODEL_SHAPES[m]),
+            radius: points.map(pt => pt.overflow ? 8 : 5),
+          });
+        });
+      });
+      const chart = new Chart(canvas, {
+        type: "scatter",
+        data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.actual.toFixed(0)} steps${ctx.raw.overflow ? " (off scale)" : ""}` } },
+          },
+          scales: {
+            x: {
+              min: -0.5, max: pool.length - 0.5,
+              title: { display: true, text: "Question ID" },
+              afterBuildTicks: (scale) => { scale.ticks = pool.map((_, i) => ({ value: i })); },
+              ticks: { autoSkip: false, maxRotation: 90, minRotation: 90, font: { size: 8 }, callback: (v) => pool[Math.round(v)] ?? "" },
+            },
+            y: { min: 0, max: STEP_COUNT_YMAX, title: { display: true, text: "Step Count" } },
+          },
+        },
+      });
+      activeCharts.push(chart);
+    });
+  });
+}
+
+// ---------- 8. Error Subtype Words ----------
+function renderErrorSubtypeWords() {
+  setFilterAvailability({
+    difficulty: false,
+    difficultyNote: "This analysis only covers the Hard tier by design.",
+    correctnessNote: "Error descriptions only exist for incorrect answers, so this view is incorrect-only by definition.",
+  });
+  const model = modelSelect.value;
+  const models = model === "all" ? MODEL_NAMES : [model];
+  const prompt = promptSelect.value;
+  const prompts = prompt === "all" ? PROMPT_TYPES : [prompt];
+
+  panelTitle.textContent = "Most Common Words in Error Descriptions (Hard tier)";
+  panelDesc.textContent = "Restricted to Hard-tier questions that ALL 3 models got wrong. Hover a bar for its meaning and a real example from this project.";
+
+  prompts.forEach(p => {
+    const pd = DATA.wordFreqByPrompt[p];
+    panelBody.appendChild(el("div", { class: "model-label" }, `${p.toUpperCase()} — ${pd.commonQuestionCount} Hard-tier questions wrong for all 3 models`));
+
+    // Shared x-axis max across all 3 models (always, regardless of the
+    // Model filter) so bars stay visually comparable even when viewing
+    // just one model's chart.
+    const sharedMax = Math.max(...MODEL_NAMES.flatMap(mm => pd.freq[mm].map(w => w[1])));
+    const xMax = Math.ceil(sharedMax * 1.15) || 1;
+
+    models.forEach(m => {
+      const freq = pd.freq[m];
+      const { wrap, canvas } = canvasBlock(Math.max(200, freq.length * 24));
+      panelBody.appendChild(el("div", { class: "model-block" }, el("div", { class: "model-label" }, MODEL_LABELS[m]), wrap));
+      const ordered = [...freq].reverse();
+      const chart = new Chart(canvas, {
+        type: "bar",
+        data: { labels: ordered.map(w => w[0]), datasets: [{ data: ordered.map(w => w[1]), backgroundColor: "#2a78d6" }] },
+        options: {
+          indexAxis: "y", responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const word = ctx.label;
+                  const def = WORD_DEFINITIONS[word] || "No definition available.";
+                  const example = (pd.examples[m] && pd.examples[m][word]) || "";
+                  const lines = [`Frequency: ${ctx.raw}`, `Meaning: ${def}`];
+                  if (example) lines.push(`Example (this project): "${example}"`);
+                  return lines;
+                },
+              },
+            },
+          },
+          scales: { x: { min: 0, max: xMax, title: { display: true, text: "Frequency of Occurrence" }, ticks: { precision: 0 } } },
+        },
+      });
+      activeCharts.push(chart);
+    });
+  });
+}
+
+// ---------- 9. Dataset Composition ----------
+function renderDatasetComposition() {
+  setFilterAvailability({
+    model: false, prompt: false, difficulty: false,
+    modelNote: "Dataset composition reflects the underlying question set only.",
+    promptNote: "Dataset composition reflects the underlying question set only.",
+    difficultyNote: "Each wedge already breaks its count down by Easy/Medium/Hard below the total.",
+    correctnessNote: "Dataset composition reflects the underlying question set only — no model ran yet, so there's no correctness dimension here.",
+  });
+
+  panelTitle.textContent = "Dataset Composition by Category";
+  panelDesc.textContent = "131 questions total, drawn from two source benchmarks (see the Data Sources box below the table): 80 from Hendrycks MATH (Easy + Medium tiers) and 51 from AIME (Hard tier only).";
+
+  const categories = Object.keys(DATA.composition);
+  const { wrap, canvas } = canvasBlock(480);
+  panelBody.appendChild(wrap);
+
+  const wedgeLabelPlugin = {
+    id: "wedgeLabels",
+    afterDatasetsDraw(c) {
+      const { ctx } = c;
+      const meta = c.getDatasetMeta(0);
+      meta.data.forEach((arc, i) => {
+        const { x, y, startAngle, endAngle, outerRadius } = arc.getProps(["x", "y", "startAngle", "endAngle", "outerRadius"], true);
+        const midAngle = (startAngle + endAngle) / 2;
+        const lx = x + Math.cos(midAngle) * outerRadius * 0.62;
+        const ly = y + Math.sin(midAngle) * outerRadius * 0.62;
+        const cat = categories[i];
+        const counts = DATA.composition[cat];
+        const lines = [
+          cat, "",
+          `Total: ${counts.Total}`, "",
+          `Easy: ${counts.Easy}  (Hendrycks)`,
+          `Medium: ${counts.Medium}  (Hendrycks)`,
+          `Hard: ${counts.Hard}  (AIME)`,
+        ];
+        ctx.save();
+        ctx.fillStyle = "#000";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const lineHeight = 15;
+        const startY = ly - ((lines.length - 1) * lineHeight) / 2;
+        lines.forEach((line, li) => {
+          ctx.font = li === 0 ? "bold 13px -apple-system, Helvetica, Arial, sans-serif" : "bold 10.5px -apple-system, Helvetica, Arial, sans-serif";
+          ctx.fillText(line, lx, startY + li * lineHeight);
+        });
+        ctx.restore();
+      });
+    },
+  };
+
+  const chart = new Chart(canvas, {
+    type: "pie",
+    data: {
+      labels: categories.map(c => `${c} (${DATA.composition[c].Total})`),
+      datasets: [{ data: categories.map(c => DATA.composition[c].Total), backgroundColor: categories.map(c => CATEGORY_COLORS[c]), borderColor: "#000", borderWidth: 1.5 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, rotation: -90, circumference: 360,
+      plugins: { legend: { display: false } },
+    },
+    plugins: [wedgeLabelPlugin],
+  });
+  activeCharts.push(chart);
+
+  const totalHendrycks = categories.reduce((s, c) => s + DATA.composition[c].Easy + DATA.composition[c].Medium, 0);
+  const totalAime = categories.reduce((s, c) => s + DATA.composition[c].Hard, 0);
+
+  panelBody.appendChild(el("div", { class: "stats-box" },
+    el("h3", {}, "Data sources"),
+    el("div", { style: "margin-bottom:10px" },
+      el("b", {}, `Easy + Medium tiers (${totalHendrycks} questions) — `),
+      "Hendrycks MATH benchmark. Level 1 and Level 2 questions were mapped to Easy; Level 3 and Level 4 to Medium. ",
+      el("a", { href: "https://huggingface.co/datasets/EleutherAI/hendrycks_math", target: "_blank", rel: "noopener" }, "huggingface.co/datasets/EleutherAI/hendrycks_math")
+    ),
+    el("div", {},
+      el("b", {}, `Hard tier (${totalAime} questions) — `),
+      "AIME (American Invitational Mathematics Examination), sourced from the official AIME I and AIME II exam papers from 2024, 2025, and 2026. ",
+      el("a", { href: "https://artofproblemsolving.com/wiki/index.php/AIME_Problems_and_Solutions", target: "_blank", rel: "noopener" }, "artofproblemsolving.com/wiki/index.php/AIME_Problems_and_Solutions")
+    )
+  ));
+}
+
+const RENDERERS = {
+  error_distribution: renderErrorDistribution,
+  error_type_frequency: renderErrorTypeFrequency,
+  error_heatmap: renderErrorHeatmap,
+  correctness_heatmap: renderCorrectnessHeatmap,
+  execution_time: renderExecutionTime,
+  step_count: renderStepCount,
+  error_subtype_words: renderErrorSubtypeWords,
+  dataset_composition: renderDatasetComposition,
+};
+
+function render() {
+  destroyCharts();
+  panelBody.innerHTML = "";
+  RENDERERS[analysisSelect.value]();
+}
+
+analysisSelect.addEventListener("change", render);
+modelSelect.addEventListener("change", render);
+promptSelect.addEventListener("change", render);
+difficultySelect.addEventListener("change", render);
+correctnessSelect.addEventListener("change", render);
+
+render();
+</script>
+</body>
+</html>

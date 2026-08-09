@@ -1,14 +1,6 @@
 """
-Case-study supplement: per-question execution time, one panel per model
-(small multiples), points coloured by difficulty tier. Replaces an earlier
-heatmap version -- a single outlier (NT_H_004 on Mistral/ToT, 894s) blew out
-the heatmap's shared colour scale and washed out every other cell. A
-scatter plot doesn't have that problem: each point stands on its own axis
-position regardless of how extreme its neighbours are.
-
-One figure per prompt type (CoT/ToT), since combining both on one axis
-would need a second visual encoding (shape) on top of the colour already
-used for difficulty.
+Per-question execution time, one panel per difficulty tier, coloured by
+model. Shared 0-300s Y-axis; overflow points drawn as a labelled triangle.
 """
 
 import os
@@ -16,96 +8,95 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from config.config import FIGURES_DIR, MODEL_NAMES, PROMPT_TYPES, DIFFICULTIES
+from config.config import FIGURES_DIR, MODEL_NAMES, PROMPT_TYPES, DIFFICULTIES, DATASET_SEED
 from src.utils.io import load_results
 
-# Difficulty reads as a severity/status signal here (easy=safe, hard=costly),
-# so it borrows the status palette rather than the categorical one.
-DIFFICULTY_COLORS = {"Easy": "#0ca30c", "Medium": "#fab219", "Hard": "#d03b3b"}
-
-# Fixed categorical order, matching the same 3 hues used elsewhere in this
-# project's figures (never cycled/reassigned per chart).
+# Fixed hue per model, used across every figure in this project.
 MODEL_COLORS = {"gemini": "#2a78d6", "groq": "#eb6834", "mistral": "#1baf7a"}
 
+# Exact model version actually served (Gemini's alias resolved to a
+# different pinned version at run time; Groq/Mistral matched their config).
+MODEL_LABELS = {
+    "gemini": "Gemini (gemini-3.5-flash-lite)",
+    "groq": "GPT-OSS-120B (Groq, openai/gpt-oss-120b)",
+    "mistral": "Mistral Large (mistral-large-latest)",
+}
 
-def plot_execution_time_by_question(prompt: str) -> None:
+QUESTION_POOL_SIZE = 40
+YLIM = (0, 300)
+OVERFLOW_MARKER_Y = 292
 
-    df = load_results()
+
+def hard_tier_question_pool(df: pd.DataFrame) -> list:
+    """Seeded 40-of-51 Hard-tier sample, matching Easy/Medium's pool size."""
+
+    hard_ids = sorted(df[df["Difficulty"] == "Hard"]["Question ID"].unique())
+    sampled = pd.Series(hard_ids).sample(n=QUESTION_POOL_SIZE, random_state=DATASET_SEED)
+    return sorted(sampled.tolist())
+
+
+def plot_execution_time_by_difficulty(prompt: str, df: pd.DataFrame, question_pool: dict) -> None:
+    """One panel per difficulty tier, points coloured by model, shared 0-300s Y-axis."""
+
     subset = df[df["Prompt"] == prompt].copy()
     subset["Execution Time (s)"] = pd.to_numeric(subset["Execution Time (s)"], errors="coerce")
 
-    fig, axes = plt.subplots(len(MODEL_NAMES), 1, figsize=(13, 3.2 * len(MODEL_NAMES)), sharex=True)
-
-    for ax, model in zip(axes, MODEL_NAMES):
-
-        model_df = subset[subset["Model"] == model]
-
-        for difficulty in DIFFICULTIES:
-            diff_df = model_df[model_df["Difficulty"] == difficulty]
-            ax.scatter(
-                diff_df["Question Number"], diff_df["Execution Time (s)"],
-                label=difficulty, color=DIFFICULTY_COLORS[difficulty],
-                s=45, alpha=0.85, edgecolor="black", linewidth=0.4,
-            )
-
-        ax.set_title(model.capitalize(), fontsize=11, fontweight="bold")
-        ax.set_ylabel("Execution Time (s)")
-        ax.grid(linestyle="--", alpha=0.3)
-
-    axes[0].legend(title="Difficulty", loc="upper left", ncol=3, fontsize=8)
-    axes[-1].set_xlabel("Question Number (1-131)")
-
-    fig.suptitle(f"Execution Time by Question, per Model ({prompt.upper()})",
-                 fontsize=13, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.97])
-
-    os.makedirs(FIGURES_DIR, exist_ok=True)
-    path = os.path.join(FIGURES_DIR, f"execution_time_by_question_{prompt}.png")
-    plt.savefig(path, dpi=300, bbox_inches="tight")
-    plt.close()
-
-    print(f"Saved -> {path}")
-
-
-def plot_execution_time_by_difficulty(prompt: str) -> None:
-    """Transposed view of plot_execution_time_by_question: one panel per
-    DIFFICULTY tier, points coloured by MODEL, x-axis is the question's
-    position within its own tier (1..N) rather than the global 1-131
-    numbering -- so Easy/Medium (40 questions each) and Hard (51) all
-    start at 1, matching how the tiers are naturally compared."""
-
-    df = load_results()
-    subset = df[df["Prompt"] == prompt].copy()
-    subset["Execution Time (s)"] = pd.to_numeric(subset["Execution Time (s)"], errors="coerce")
-
-    fig, axes = plt.subplots(len(DIFFICULTIES), 1, figsize=(13, 3.2 * len(DIFFICULTIES)), sharex=False)
+    fig, axes = plt.subplots(len(DIFFICULTIES), 1, figsize=(15, 3.6 * len(DIFFICULTIES)), sharex=False)
 
     for ax, difficulty in zip(axes, DIFFICULTIES):
 
-        diff_df = subset[subset["Difficulty"] == difficulty].copy()
+        pool = question_pool[difficulty]
+        diff_df = subset[(subset["Difficulty"] == difficulty) & (subset["Question ID"].isin(pool))].copy()
 
-        # Position within this tier, not the global Question Number.
-        tier_question_ids = sorted(diff_df["Question ID"].unique())
-        position = {qid: i + 1 for i, qid in enumerate(tier_question_ids)}
+        position = {qid: i for i, qid in enumerate(pool)}
         diff_df["Tier Position"] = diff_df["Question ID"].map(position)
 
         for model in MODEL_NAMES:
             model_df = diff_df[diff_df["Model"] == model]
+            in_range = model_df[model_df["Execution Time (s)"] <= YLIM[1]]
+            over = model_df[model_df["Execution Time (s)"] > YLIM[1]]
+
             ax.scatter(
-                model_df["Tier Position"], model_df["Execution Time (s)"],
-                label=model.capitalize(), color=MODEL_COLORS[model],
+                in_range["Tier Position"], in_range["Execution Time (s)"],
+                label=MODEL_LABELS[model], color=MODEL_COLORS[model],
                 s=45, alpha=0.85, edgecolor="black", linewidth=0.4,
             )
+            if len(over):
+                ax.scatter(
+                    over["Tier Position"], [OVERFLOW_MARKER_Y] * len(over),
+                    marker="^", color=MODEL_COLORS[model],
+                    s=55, alpha=0.95, edgecolor="black", linewidth=0.4, zorder=5,
+                )
+                for _, row in over.iterrows():
+                    ax.annotate(
+                        f"{row['Execution Time (s)']:.0f}s",
+                        (row["Tier Position"], OVERFLOW_MARKER_Y),
+                        xytext=(0, 5), textcoords="offset points",
+                        ha="center", fontsize=5.5, fontweight="bold", color=MODEL_COLORS[model],
+                    )
 
-        ax.set_title(difficulty, fontsize=11, fontweight="bold")
+        ax.set_title(f"{difficulty} (n={len(pool)} questions)", fontsize=11, fontweight="bold")
         ax.set_ylabel("Execution Time (s)")
-        ax.set_xlabel(f"Question Number (1-{len(tier_question_ids)})")
+        ax.set_ylim(YLIM)
+        ax.set_xticks(range(len(pool)))
+        ax.set_xticklabels(pool, rotation=90, fontsize=6)
+        ax.set_xlabel("Question ID")
         ax.grid(linestyle="--", alpha=0.3)
 
-    axes[0].legend(title="Model", loc="upper left", ncol=3, fontsize=8)
+    axes[0].legend(title="Model", loc="upper left", ncol=1, fontsize=7)
+    axes[0].text(
+        1.0, 1.02, "^ = actual value exceeds 300s (labelled)", transform=axes[0].transAxes,
+        ha="right", va="bottom", fontsize=7, style="italic", color="#555",
+    )
 
     fig.suptitle(f"Execution Time by Question, per Difficulty ({prompt.upper()})",
                  fontsize=13, fontweight="bold")
+    fig.text(
+        0.5, -0.01,
+        "mistral-large-latest resolved to Mistral Large 3 (mistral-large-2512) for these experiments (Aug 2026) — "
+        "the alias is a moving target and would point to a newer model if re-run later.",
+        ha="center", va="top", fontsize=6.5, style="italic", color="#666",
+    )
     fig.tight_layout(rect=[0, 0, 1, 0.97])
 
     os.makedirs(FIGURES_DIR, exist_ok=True)
@@ -117,9 +108,16 @@ def plot_execution_time_by_difficulty(prompt: str) -> None:
 
 
 def run():
+    df = load_results()
+
+    question_pool = {
+        "Easy": sorted(df[df["Difficulty"] == "Easy"]["Question ID"].unique()),
+        "Medium": sorted(df[df["Difficulty"] == "Medium"]["Question ID"].unique()),
+        "Hard": hard_tier_question_pool(df),
+    }
+
     for prompt in PROMPT_TYPES:
-        plot_execution_time_by_question(prompt)
-        plot_execution_time_by_difficulty(prompt)
+        plot_execution_time_by_difficulty(prompt, df, question_pool)
 
 
 if __name__ == "__main__":

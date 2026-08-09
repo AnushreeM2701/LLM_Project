@@ -1,22 +1,6 @@
 """
-Case-study supplement: per-question correctness across all 6
-(model x prompt) conditions. Two figures: Easy+Medium combined, and Hard on
-its own -- Easy (2 of 40 questions have any wrong answer) and Medium (1 of
-40) are each too sparse to justify a standalone chart, while Hard (38 of
-51) is substantial enough to stand alone.
-
-The heatmap itself is filtered to only questions with at least one wrong
-answer among the 6 conditions -- an all-green row adds no information once
-the accuracy summary box (see below) already states the overall percentage,
-and dropping it keeps the chart focused on the actually-interesting cases.
-The accuracy summary (Model x Prompt, % per tier) is computed from the
-FULL, unfiltered tier(s) -- it must not be skewed by the filtering applied
-to the chart rows above it.
-
-Also produces a Hard-tier "hardest questions" ranking (by how many of the
-6 conditions got it wrong) -- useful for pulling 2-3 concrete worked
-examples into the Application/Case Study chapter, rather than only
-reporting aggregate percentages.
+Model Accuracy Matrix: per-question correctness across all 6 (model x
+prompt) conditions, wrong-answer rows only. Also ranks hardest Hard-tier questions.
 """
 
 import os
@@ -55,8 +39,7 @@ def correctness_grid(difficulties: list) -> pd.DataFrame:
 
 
 def accuracy_summary(difficulty: str) -> pd.DataFrame:
-    """Model x Prompt accuracy (%) for one FULL tier -- independent of
-    whatever row filtering the heatmap itself applies."""
+    """Model x Prompt accuracy (%) for one full, unfiltered tier."""
 
     df = load_results()
     subset = df[df["Difficulty"] == difficulty].copy()
@@ -69,8 +52,7 @@ def accuracy_summary(difficulty: str) -> pd.DataFrame:
 
 
 def _accuracy_box_text(difficulties: list) -> str:
-    """Stacks one Model x Prompt accuracy table per tier in the same box,
-    each clearly labelled, rather than collapsing tiers together."""
+    """One Model x Prompt accuracy table per tier, stacked in one box."""
 
     lines = ["Accuracy (%)"]
     for difficulty in difficulties:
@@ -147,8 +129,7 @@ def plot_correctness_heatmap(difficulties: list, label: str, filename: str) -> N
         ax.grid(which="minor", color="white", linewidth=1)
         ax.tick_params(which="minor", length=0)
 
-    # Accuracy summary box, separate from the heatmap, one table per tier,
-    # computed on the full (unfiltered) tier(s).
+    # Accuracy summary box, computed on the full unfiltered tier(s).
     box_text = _accuracy_box_text(difficulties)
     ax_box.text(
         0.05, 0.95, box_text, transform=ax_box.transAxes, fontsize=9,
@@ -157,7 +138,7 @@ def plot_correctness_heatmap(difficulties: list, label: str, filename: str) -> N
     )
 
     fig.suptitle(
-        f"{label} Correctness by Question and Condition (wrong-answer questions only)",
+        f"Model Accuracy Matrix - {label} (wrong-answer questions only)",
         fontsize=12, fontweight="bold",
     )
 
