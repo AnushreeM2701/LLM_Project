@@ -143,7 +143,13 @@
     \end{center}
 \end{titlepage}
 
-\onehalfspacing
+% Single spacing, matching the explicit "45-75 pages, based on using 11pt
+% font and single line spacing" instruction -- the official template file
+% uses 1.5 spacing instead; flagged as a genuine inconsistency between the
+% two official documents, single spacing chosen since it's the more
+% specific, directly-stated rule. Switch to \onehalfspacing here if your
+% coordinator says otherwise.
+\singlespacing
 \hypersetup{pageanchor=true}
 \setcounter{page}{1}
 \pagenumbering{roman}
@@ -220,15 +226,15 @@ referenced, it has been fully acknowledged.
 % ==========================================================
 % CHAPTERS -- per the MSc outline: Introduction, Literature Review,
 % Statistical/Mathematical Methodology, Application/Case Study, Results,
-% Discussion & Conclusions.
+% Discussion and Conclusion (merged into one chapter per the outline's
+% "as appropriate" flexibility, given the 45-75 page target).
 % ==========================================================
 \input{chapters/01_introduction}
 \input{chapters/02_literature_review}
 \input{chapters/03_methodology}
 \input{chapters/04_case_study}
 \input{chapters/05_results}
-\input{chapters/06_discussion}
-\input{chapters/07_conclusion}
+\input{chapters/06_discussion_conclusion}
 
 % ==========================================================
 % BIBLIOGRAPHY

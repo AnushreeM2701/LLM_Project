@@ -1,37 +1,60 @@
 \chapter{Results}
 \label{chap:results}
 
-% BLOCKED: waiting on (1) the neutral-judge validation run to finish, and
-% (2) re-running src/analysis/*.py against the corrected, fully-classified
-% dataset -- the existing outputs/tables/*.csv and outputs/figures/*.png
-% are stale (generated before this session's 17 answer-correctness fixes
-% and before error classification completed). Structure below is ready to
-% fill in once that's done.
+% YOU WRITE THIS CHAPTER. Data collection and analysis are complete --
+% nothing here is blocked anymore. Ask me to walk you through any table/
+% test result below before you write about it; I'll explain what the
+% numbers mean, you decide how to present and phrase them.
+
+\section{Overview}
+% One short paragraph: what this chapter covers and how it's organised
+% (overall accuracy, then RQ1/RQ2/RQ3 in turn, then execution time).
 
 \section{Overall Accuracy}
 % Descriptive accuracy by model, prompt type, difficulty tier, category.
 % Source: outputs/tables/accuracy_by_model_prompt.csv,
 % accuracy_by_model_category.csv, accuracy_by_model_prompt_difficulty.csv.
+% Note Easy/Medium are near-ceiling (95-100%) -- ask me why this matters
+% for how much weight the Hard-tier results should carry in your argument.
 
 \section{RQ1 -- Error Type Distribution}
 % Source: outputs/tables/rq1_error_distribution.csv,
-% rq1_error_type_by_model.csv, rq1_independence_test.csv (chi-square/Fisher).
-% Include the error-subtype qualitative examples already surfaced during
-% classification (Section~\ref{sec:data-quality} discusses the process;
-% this section reports the outcome).
+% rq1_error_type_by_model.csv, rq1_independence_test.csv (chi-square).
+% Figures: outputs/figures/error_distribution.png (overall ranking),
+% error_heatmap_top6_by_prompt.png (top 6 by model, CoT vs ToT).
+% Ask me to explain the chi-square "caution" flag (small expected cell
+% counts) before stating the independence-test result as clean.
 
 \section{RQ2 -- Error Location}
 % Source: outputs/tables/rq2_error_position_summary.csv,
-% rq2_error_position_detail.csv, rq2_kruskal_wallis.csv.
+% rq2_error_position_detail.csv, rq2_kruskal_wallis.csv (significant,
+% p=0.0016 -- ask me to explain what this test does and does not tell you).
 
 \section{RQ3 -- CoT vs.\ ToT}
 % Source: outputs/tables/rq3_prompt_comparison.csv (McNemar per model).
+% The headline nuance: significant for Groq and Mistral, NOT for Gemini --
+% ask me to walk through why that's a more interesting finding than "ToT
+% wins," and how to phrase it precisely.
 
-\section{Judge Agreement}
-% Source: outputs/stats/judge_agreement_summary.csv (Cohen's kappa, raw
-% agreement rate) and judge_agreement_detail.csv.
+\section{Per-Question Correctness}
+% State the headline numbers here (e.g. "10 Hard-tier questions were
+% answered incorrectly by all 6 model/prompt conditions"), citing
+% outputs/tables/hard_tier_hardest_questions.csv. Point to Appendix
+% Figure~\ref{app:correctness-heatmaps} for the full per-question detail
+% rather than reproducing the full heatmaps here -- keeps this chapter
+% inside the page budget.
+
+\section{Judge Classification Coverage}
+% State plainly: all 136 incorrect responses were classified by the
+% primary judge (Gemini). The neutral-judge validation sample was
+% attempted but not completed (see docs/limitations.md) -- report this
+% honestly here rather than omitting it, since Chapter~\ref{chap:discussion}
+% needs to discuss what that gap does and does not undermine.
 
 \section{Execution Time}
-% Source: outputs/tables/execution_time_summary.csv and
-% outputs/figures/execution_time_by_question_{cot,tot}.png,
-% execution_time_by_difficulty_{cot,tot}.png.
+% Brief summary paragraph only -- this isn't a research question, just
+% reported for transparency (ToT costs ~4x CoT's calls by construction).
+% Point to Appendix for the full figures
+% (execution\_time\_by\_question\_\{cot,tot\}.png,
+% execution\_time\_by\_difficulty\_\{cot,tot\}.png) rather than including
+% all four here.
