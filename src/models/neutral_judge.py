@@ -1,17 +1,3 @@
-"""
-Client for the neutral error-classification judge (llama-3.3-70b-versatile,
-via Groq -- originally Kimi K2 0905, but Groq removed it from their model
-catalog entirely; see config.config.NEUTRAL_JUDGE_MODEL_ID).
-
-Deliberately separate from src/models/groq_gptoss.py: that module is one of
-the three STUDY models being evaluated; this one exists only to validate
-the primary judge (Gemini, which IS one of the three study models — see
-docs/limitations.md for why that overlap needed a validation check in the
-first place). Using the same underlying provider (Groq) as the GPT-OSS
-study model is fine — the thing that must stay independent is the specific
-MODEL being judged vs. judging, not the hosting provider.
-"""
-
 import os
 import time
 

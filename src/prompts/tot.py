@@ -1,20 +1,3 @@
-"""
-Real multi-branch Tree-of-Thought.
-
-This replaces the prior pipeline's single-call "consider alternatives"
-prompt, which was reviewed and found not to be genuine ToT (Yao et al.,
-2023) — it never actually generated multiple candidate reasoning paths.
-
-Pipeline: generate_branches() -> select_best() -> final response.
-Each ToT question costs config.TOT_BRANCH_COUNT branch-generation calls
-plus 1 selection call (e.g. 3+1=4 calls, vs. 1 call for CoT).
-
-Branch generation uses TOT_BRANCH_TEMPERATURE (not 0) so the branches are
-genuinely different candidate solutions rather than near-identical greedy
-decodes of the same prompt — see config.config for the full rationale.
-Selection is deterministic (temperature=0).
-"""
-
 from dataclasses import dataclass, field
 from typing import Callable, List
 
@@ -89,9 +72,9 @@ Justification: <one sentence, maximum 25 words>
 
 @dataclass
 class ToTResult:
-    final_response: str          # the selected branch's full text (used downstream exactly like a CoT response)
+    final_response: str
     branches: List[str]
-    selected_branch: int         # 1-indexed
+    selected_branch: int
     selection_justification: str
     selection_raw: str
     total_latency_s: float
@@ -117,11 +100,7 @@ def generate_branches(
     ]
 
 
-_SELECTION_MAX_TOKENS = 300  # output is just "Selected Branch: N" + a one-sentence
-# justification -- reusing the full per-model max_tokens (e.g. Groq's 4096) as the
-# reserved completion budget here, on top of 3 concatenated branch texts as prompt,
-# is what pushed a Combinatorics Hard ToT selection call over Groq's 8000 TPM cap.
-
+_SELECTION_MAX_TOKENS = 300
 
 def select_best(
     question: str,

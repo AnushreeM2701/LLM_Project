@@ -1,31 +1,3 @@
-"""
-Model pilot: verify the 3 new models (gemini-3.5-flash, GPT-OSS-120B,
-mistral-large-latest) before committing to the full-dataset rerun.
-
-Deliberately separate from src/experiments/run_experiment.py and writes to
-its own file (data/results/pilot_results.csv), NOT the canonical
-experiment_results.csv -- if the pilot finds a problem (leaked reasoning
-tokens, a config issue), nothing needs to be un-recorded from the real
-resumable pipeline; we just fix config and re-run the pilot.
-
-Checks, per config.config.MODELS decisions:
-1. Accuracy -- meaningfully better than the prior pipeline's models,
-   especially on Hard/AIME (was ~11% under gemini-3.1-flash-lite /
-   llama-3.3-70b / mistral-small, though that number was measured before
-   the AIME text-extraction fix in src/dataset/fix_aime_extraction.py, so
-   isn't a perfectly clean baseline either -- see docs/limitations.md).
-2. No leaked internal reasoning/thinking tokens despite pinning
-   thinking_level="minimal" (Gemini) / reasoning_effort="low" (GPT-OSS) --
-   these are controls, not guarantees, and need empirical verification.
-
-Resumable like the main runner (uses generate_with_retry from
-src/experiments/generation.py) -- API calls are real cost/time, so a crash
-partway through (as happened twice while building this: a bad model ID,
-then a transient 503) shouldn't discard already-completed pilot rows.
-
-Run: python -m src.experiments.run_pilot
-"""
-
 import os
 import re
 import threading
@@ -53,13 +25,8 @@ PILOT_COLUMNS = [
     "Response Length (chars)", "Leakage Hits", "Latency (s)", "Full Response",
 ]
 
-# Weighted toward Hard/AIME since that's the tier the old models failed
-# hardest on (~11% accuracy) and where an accuracy improvement matters most.
 PILOT_SAMPLE_PER_DIFFICULTY = {"Hard": 6, "Medium": 3, "Easy": 3}
 
-# Heuristic leakage indicators -- a hit here means "look at this response
-# manually," not an automatic fail. Reasoning-native models sometimes wrap
-# hidden reasoning in tags like these even when told not to show it.
 LEAKAGE_PATTERNS = [
     r"<think>", r"</think>", r"<reasoning>", r"</reasoning>",
     r"<scratchpad>", r"\[thinking\]", r"^okay,? let me think",
@@ -202,11 +169,6 @@ def run_pilot():
             try:
                 future.result()
             except Exception as e:
-                # Don't let one model's unhandled error (e.g. a network
-                # error type generate_with_retry didn't recognize) discard
-                # the other models' already-collected, already-saved data.
-                # The resumable design means this model's remaining
-                # questions just get picked up on the next run.
                 print(f"\n[{model}] thread failed (data collected so far is "
                       f"still saved): {e}")
                 failed_models.append(model)

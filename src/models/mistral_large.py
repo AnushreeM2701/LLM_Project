@@ -1,18 +1,3 @@
-"""
-Mistral client for mistral-large-latest. Unified return contract — see
-src/models/base.py.
-
-Replaces the prior pipeline's mistral-small-latest. Free on Mistral's
-"Experiment" tier, which also includes Large (not just Small). Standard
-instruct model — no thinking-mode toggle to control for, unlike the Gemini
-and Groq picks.
-
-Note: Mistral's free "Experiment" tier is rate-limited to 2 requests/minute
-(see config.config.RETRY_SETTINGS["mistral"]["min_request_interval_s"]) —
-Mistral runs will simply take longer wall-clock time than Gemini/Groq runs.
-This is a scheduling fact for the resumable experiment runner, not a bug.
-"""
-
 import os
 import time
 

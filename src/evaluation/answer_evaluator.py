@@ -1,15 +1,3 @@
-"""
-Answer normalization and correctness comparison.
-
-Ported from the prior pipeline's app/evaluation/evaluator.py essentially
-unchanged — this logic was reviewed and found to already be more careful
-than most published LLM-benchmark graders (handles LaTeX fractions,
-percentages, mixed numbers, and symbolic algebraic equivalence via SymPy,
-not just string matching). See tests/test_answer_evaluator.py for the
-validation cases and docs/limitations.md for the human-validation sample
-that checks this logic against manual grading.
-"""
-
 import math
 import re
 from fractions import Fraction

@@ -8,7 +8,8 @@ This repository contains the implementation and experimental results for the Mas
 
 The project investigates the mathematical reasoning performance of Large Language Models (LLMs) using different prompting strategies on a curated dataset of 131 mathematical reasoning problems (AIME and Hendrycks MATH).
 
-Three free-tier, non-reasoning-native LLMs are evaluated:
+Three free-tier LLMs are evaluated, none of them dedicated frontier
+reasoning models (e.g. o1/o3-style models with reasoning always on):
 
 - **Gemini** (`gemini-flash-lite-latest`, via Google)
 - **GPT-OSS-120B** (via Groq)

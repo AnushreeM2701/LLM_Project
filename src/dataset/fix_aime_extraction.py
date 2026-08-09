@@ -1,26 +1,3 @@
-"""
-One-time correction of AIME question text corrupted by pdfplumber's
-extraction of subscript/superscript LaTeX notation (see
-src/dataset/extract_aime.py).
-
-Discovered during the model pilot (docs/limitations.md): pdfplumber's
-linear text extraction drops or mis-positions subscripts and superscripts
-in the source PDFs (typeset by Po-Shen Loh's LIVE project). For simple
-single exponents ("a2" for a^2) this is usually still inferable from
-context; for multi-index notation (sequences a_1,...,a_n, recurrences
-x_{k+1}, log bases, summation indices) it produces genuinely ambiguous or
-unsolvable text, independent of which model is asked to solve it.
-
-Rather than patch only the worst offenders, every one of the 51 curated
-(Include=T) AIME questions was re-transcribed by visually reading the
-source PDF pages, so the whole Hard tier has consistent, correct notation.
-This corrects the SOURCE file (data/raw/aime_master.xlsx), not just the
-frozen dataset, so re-running src/dataset/freeze_dataset.py reproduces the
-fix rather than needing it reapplied.
-
-Run once: python -m src.dataset.fix_aime_extraction
-"""
-
 import pandas as pd
 
 from config.config import AIME_MASTER_PATH

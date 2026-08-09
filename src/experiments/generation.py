@@ -1,23 +1,3 @@
-"""
-Shared retry/backoff/pacing wrapper around model generation.
-
-Extracted so src/experiments/run_experiment.py (the real resumable
-pipeline) and src/experiments/run_pilot.py (the pre-commit pilot) share
-ONE retry implementation instead of two scripts silently drifting apart —
-the run_pilot.py crash on a transient Gemini 503 (no retry logic at all)
-is exactly the kind of duplication bug this rebuild is meant to prevent.
-
-429 (quota) and 503 (server busy/unavailable) are handled differently on
-exhaustion, matching the prior pipeline's reasoning: a 429 that survives
-max_retries is very likely a genuine daily-quota wall, so it's worth
-abandoning the rest of THIS model's questions for this run (the resumable
-design picks them back up next run / after quota resets) rather than
-burning 5 retries x wait_seconds on every remaining question. A 503 is
-more often a transient blip on one request -- exhausting retries there
-just means recording this one question as an empty (incorrect) response
-and moving on, not abandoning the whole model.
-"""
-
 import time
 
 from config.config import RETRY_SETTINGS, TOT_BRANCH_COUNT
@@ -34,9 +14,6 @@ _last_call_time = {}
 
 
 def pace(provider: str) -> None:
-    """Proactively sleep so we don't exceed a provider's free-tier rate
-    limit -- reactive 429 backoff alone is far too slow for Mistral's 2
-    requests/minute cap."""
 
     min_interval = RETRY_SETTINGS[provider]["min_request_interval_s"]
     last = _last_call_time.get(provider)
@@ -50,10 +27,6 @@ def pace(provider: str) -> None:
 
 
 def generate_with_retry(model_name: str, prompt_type: str, question: str) -> dict:
-    """Runs one experiment's generation (1 call for CoT, N+1 for ToT) with
-    retry/backoff. Raises QuotaExhausted if a 429 survives max_retries.
-    Returns an empty-text dict if a 503 survives max_retries (record as a
-    failed/incorrect response and move on)."""
 
     settings = RETRY_SETTINGS[model_name]
     generate_fn = get_model(model_name)
@@ -92,20 +65,10 @@ def generate_with_retry(model_name: str, prompt_type: str, question: str) -> dic
             error = str(e)
             error_lower = error.lower()
             is_quota = "429" in error
-            # Any 5xx is a transient server-side condition worth retrying --
-            # narrowly matching "503" alone missed a Mistral 500 ("internal
-            # server_error" / "Service unavailable") that killed a thread
-            # mid-pilot. Word-boundary-ish check via surrounding non-digits
-            # to avoid accidentally matching a 5xx substring inside an
-            # unrelated large number.
             is_server_busy = any(
                 f" {code}" in error or f"status {code}" in error_lower or f"code {code}" in error_lower
                 for code in ("500", "502", "503", "504")
             )
-            # Transient network issues (read timeouts, connection resets) --
-            # discovered when a Mistral call raised a bare "read operation
-            # timed out" mid-pilot, uncaught by the 429/503 checks alone,
-            # which killed the whole thread instead of just retrying.
             is_network_issue = (
                 "timed out" in error_lower
                 or "timeout" in error_lower

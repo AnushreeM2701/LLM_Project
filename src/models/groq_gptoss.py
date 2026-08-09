@@ -1,19 +1,3 @@
-"""
-Groq client for GPT-OSS-120B. Unified return contract — see src/models/base.py.
-
-Replaces the prior pipeline's llama-3.3-70b-versatile. Llama 4 Maverick was
-the originally planned replacement, but was found (mid-build, while writing
-this module) to have been deprecated by Groq in Feb 2026, with its successor
-Llama 4 Scout also deprecated in Jun 2026. GPT-OSS-120B is Groq's own
-recommended migration target for both.
-
-reasoning_effort is pinned to "low" and held constant across CoT and ToT
-(see config.config.MODELS) — GPT-OSS is reasoning-native, so this doesn't
-eliminate internal reasoning, but it does hold it fixed so the CoT/ToT
-prompting comparison isn't confounded by a variable reasoning budget. See
-docs/limitations.md.
-"""
-
 import os
 import time
 
@@ -27,9 +11,6 @@ load_dotenv()
 
 _CFG = MODELS["groq"]
 
-# Request timeout (s) -- see src/models/gemini.py for why this exists: a
-# hung network call raises no exception on its own, so without a timeout
-# generate_with_retry() never gets a chance to retry/skip.
 _REQUEST_TIMEOUT_S = 120.0
 
 _client = Groq(api_key=os.getenv("GROQ_API_KEY"), timeout=_REQUEST_TIMEOUT_S)

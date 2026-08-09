@@ -1,13 +1,3 @@
-"""
-Shared inferential-statistics helpers used across src/analysis/*.
-
-The prior pipeline's analysis was purely descriptive (raw percentages, no
-significance testing) despite the dissertation title being "A Statistical
-Study..." — this module is the fix. Every function returns plain
-dicts/tuples so callers can write them straight to a table without extra
-plumbing.
-"""
-
 from typing import Sequence, Tuple
 
 import numpy as np
@@ -20,11 +10,6 @@ from scipy.stats import binomtest, chi2_contingency, fisher_exact, kruskal
 # ==========================================================
 
 def mcnemar_exact(b: int, c: int) -> dict:
-    """b = questions correct under condition A only, c = correct under B
-    only (the discordant pairs). Concordant pairs (both right / both
-    wrong) carry no information for this test and are excluded by design.
-    """
-
     n = b + c
 
     if n == 0:
@@ -49,9 +34,6 @@ def paired_accuracy_discordant_counts(
     pair_key_col: str,
     correct_col: str = "Answer Correct",
 ) -> Tuple[int, int]:
-    """Counts b (correct under A only) and c (correct under B only) for
-    McNemar's test, pairing rows on pair_key_col (e.g. Question ID)."""
-
     pivot = df.pivot_table(
         index=pair_key_col, columns=condition_col, values=correct_col, aggfunc="first"
     )
@@ -65,14 +47,10 @@ def paired_accuracy_discordant_counts(
     return b, c
 
 
-# ==========================================================
-# RQ1: chi-square / Fisher's exact test of independence
-# ==========================================================
+# chi-square / Fisher's exact test of independence
+
 
 def independence_test(contingency_table: pd.DataFrame) -> dict:
-    """Chi-square test of independence, falling back to Fisher's exact
-    test for 2x2 tables with small expected cell counts (chi-square's
-    approximation is unreliable below ~5 expected count per cell)."""
 
     table = contingency_table.to_numpy()
 
@@ -98,15 +76,9 @@ def independence_test(contingency_table: pd.DataFrame) -> dict:
     }
 
 
-# ==========================================================
-# RQ2: distribution comparison (normalized error step location)
-# ==========================================================
+# distribution comparison (normalized error step location)
 
 def kruskal_wallis(*groups: Sequence[float]) -> dict:
-    """Non-parametric test for whether normalized error-step location
-    differs across >=2 groups (e.g. across models) without assuming a
-    normal distribution — appropriate for a bounded 0-1 position measure."""
-
     groups = [g for g in groups if len(g) > 0]
 
     if len(groups) < 2:
@@ -116,16 +88,9 @@ def kruskal_wallis(*groups: Sequence[float]) -> dict:
 
     return {"statistic": statistic, "p_value": p_value, "significant": p_value < 0.05}
 
-
-# ==========================================================
 # CONFIDENCE INTERVALS
-# ==========================================================
 
 def wilson_ci(successes: int, n: int, confidence: float = 0.95) -> dict:
-    """Wilson score interval for a binomial proportion (accuracy). Better
-    behaved than the normal approximation at small n or extreme
-    proportions (e.g. the AIME-Hard ~11% accuracy cells) — see
-    docs/limitations.md re: small subgroup sample sizes."""
 
     if n == 0:
         return {"proportion": None, "lower": None, "upper": None}
@@ -154,9 +119,6 @@ def bootstrap_ci(
     confidence: float = 0.95,
     seed: int = 25116096,
 ) -> dict:
-    """General-purpose bootstrap CI for statistics without a closed-form
-    interval (e.g. mean execution time). For accuracy proportions, prefer
-    wilson_ci — it's exact rather than resampled."""
 
     data = np.asarray(data)
 

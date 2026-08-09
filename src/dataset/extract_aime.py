@@ -1,12 +1,6 @@
 """
 Extracts AIME questions + official answers from the source PDFs into
 config.AIME_MASTER_PATH.
-
-Ported from the prior pipeline's app/dataset/create_aime_dataset.py, logic
-unchanged. Not re-run as part of this rebuild — data/raw/aime_master.xlsx
-already contains the prior run's output, including the manual Include/
-Category curation already done on top of it (see docs/methodology.md).
-Re-run this only if new AIME papers are added to data/aime_questions/.
 """
 
 import os

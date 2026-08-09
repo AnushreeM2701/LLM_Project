@@ -2,17 +2,6 @@
 Pulls Easy/Medium candidate questions from the Hendrycks MATH dataset
 (EleutherAI/hendrycks_math on Hugging Face) into
 config.HENDRYCKS_CANDIDATES_PATH.
-
-Ported from the prior pipeline's app/dataset/create_easy_medium_dataset.py,
-logic unchanged. Not re-run as part of this rebuild —
-data/curated/hendrycks_candidates.xlsx already contains the prior run's
-output plus the manual Include/Final Category curation done on top of it.
-
-NOTE (see docs/methodology.md and docs/limitations.md): Hendrycks MATH is a
-widely-used public benchmark and is very likely present in the pretraining
-data of all three study models — a genuine contamination risk for Easy/
-Medium accuracy. Hard-tier questions are sourced from AIME instead
-specifically to reduce this risk (see freeze_dataset.py).
 """
 
 import os

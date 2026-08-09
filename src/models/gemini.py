@@ -1,14 +1,3 @@
-"""
-Gemini client. Unified return contract shared by every model module:
-{text, model_version, latency_s, raw_usage} — see src/models/base.py.
-
-Uses gemini-3-flash (upgraded from the prior pipeline's gemini-3.1-flash-lite)
-with thinking_level pinned to "minimal" and held constant across CoT and ToT
-so the prompting-strategy manipulation, not a variable internal reasoning
-budget, is what's being measured (see config.config.MODELS and
-docs/limitations.md).
-"""
-
 import os
 import time
 
@@ -23,12 +12,6 @@ load_dotenv()
 
 _CFG = MODELS["gemini"]
 
-# Request timeout (ms) -- without this, a hung network call can block a
-# thread indefinitely with no exception raised, so generate_with_retry()
-# never gets a chance to retry. Discovered when a Gemini call stalled for
-# ~58 minutes with no error during the Medium-tier run. 120s is generous
-# relative to observed real call durations (even a heavy ToT branch call
-# has taken well under 2 minutes) while still bounding the worst case.
 _REQUEST_TIMEOUT_MS = 120_000
 
 _client = genai.Client(

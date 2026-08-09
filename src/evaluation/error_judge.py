@@ -1,22 +1,3 @@
-"""
-Error-type classification (RQ1) and error-step location (RQ2).
-
-The judge prompt design (evaluate the model's reasoning on its own
-mathematical merits, never compare against a reference solution) is ported
-from the prior pipeline's app/evaluation/error_evaluation.py unchanged —
-that framing was reviewed and found sound, and is also why AIME's missing
-step-by-step reference solutions are a non-issue (see docs/methodology.md).
-
-What's new: the primary judge (Gemini) is one of the three models under
-evaluation, which the review flagged as a conflict of interest in the
-central model comparison. Rather than fully replacing it (cost), a fixed
-sample is independently re-judged by a neutral model not under evaluation
-(llama-3.3-70b-versatile via Groq — see src/models/neutral_judge.py), and inter-judge
-agreement (Cohen's kappa) is computed and reported. If agreement is high,
-the judge choice demonstrably isn't biasing the results; if it's low, that
-itself is an important, honestly-reported finding.
-"""
-
 import json
 import os
 import time
@@ -38,11 +19,7 @@ from src.utils.io import load_results, save_results
 _MAX_RETRIES = 5
 _WAIT_SECONDS = 30
 
-
-# ==========================================================
 # JUDGE PROMPT
-# ==========================================================
-
 def build_error_prompt(question, category, ground_truth, model_answer, reasoning) -> str:
 
     return f"""
@@ -191,15 +168,6 @@ def classify_error(question, category, ground_truth, model_answer, reasoning, ju
             text = text[start:end + 1]
 
             parsed = json.loads(text)
-
-            # str()-coerce every field: the prompt asks for "error_step" as
-            # a JSON integer, and the judge model follows that literally, so
-            # parsed.get("error_step") is a Python int here -- assigning an
-            # int into these all-text results columns raises a TypeError
-            # under pandas' strict string dtype. All fields are stored as
-            # free text regardless of what JSON type the judge happens to
-            # return, so coercing here is always correct, not just a
-            # workaround for this one field.
             return {
                 "Error Step": str(parsed.get("error_step", "")),
                 "Error Type": str(parsed.get("error_type", "Other")),
@@ -220,10 +188,7 @@ def classify_error(question, category, ground_truth, model_answer, reasoning, ju
         "Justification": "Classification failed.",
     }
 
-
-# ==========================================================
 # PRIMARY JUDGE PASS (Gemini)
-# ==========================================================
 
 def run_primary_judge():
 
@@ -284,10 +249,7 @@ def run_primary_judge():
 
     return results
 
-
-# ==========================================================
 # NEUTRAL-JUDGE VALIDATION SAMPLE
-# ==========================================================
 
 def cohen_kappa(labels_a, labels_b) -> float:
     """Standard Cohen's kappa, computed from scratch to avoid adding a
@@ -317,9 +279,7 @@ def cohen_kappa(labels_a, labels_b) -> float:
 
 def run_neutral_validation():
     """Re-judges a fixed sample of primary-judged rows with a neutral model
-    (not under evaluation) and reports inter-judge agreement. Does NOT
-    overwrite the primary judge's columns in the canonical results file —
-    writes a separate validation table to outputs/stats/."""
+    (not under evaluation) and reports inter-judge agreement."""
 
     results = load_results()
 

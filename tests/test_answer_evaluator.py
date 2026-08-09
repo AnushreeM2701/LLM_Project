@@ -1,22 +1,8 @@
-"""
-Unit tests for src/evaluation/answer_evaluator.py.
-
-Covers the prior pipeline's __main__ smoke-test cases (now proper assertions,
-not print statements someone has to eyeball) plus new edge cases surfaced
-during the methodology review. This is the automated half of validating the
-grader; docs/limitations.md documents the manual/human-graded validation
-sample as the other half.
-"""
-
 import pytest
 
 from src.evaluation.answer_evaluator import evaluate_response, is_correct
 
-
-# ==========================================================
 # CASES CARRIED OVER FROM THE PRIOR PIPELINE'S SMOKE TEST
-# ==========================================================
-
 @pytest.mark.parametrize(
     "ground_truth,prediction",
     [
@@ -32,10 +18,7 @@ from src.evaluation.answer_evaluator import evaluate_response, is_correct
 def test_known_equivalent_pairs(ground_truth, prediction):
     assert is_correct(ground_truth, prediction)
 
-
-# ==========================================================
 # NEW EDGE CASES
-# ==========================================================
 
 def test_mixed_number_equivalence():
     assert is_correct("2 1/3", "7/3")
@@ -82,15 +65,8 @@ def test_evaluate_response_returns_expected_shape():
 
 
 def test_escaped_percent_sign_equivalence():
-    # Regression: "10\%" (LaTeX's escaped literal percent sign, since a bare
-    # "%" starts a LaTeX comment) failed the percent-fullmatch check and
-    # never got converted to 0.1, so it stopped comparing equal to a
-    # differently-escaped "10%". Found via COMB_M_004_groq_cot in the live
-    # results data.
     assert is_correct(r"10\%", "10%")
 
 
 def test_braceless_frac_shorthand_equivalence():
-    # "\frac12" == "\frac{1}{2}" -- LaTeX's shorthand for single-character
-    # numerator/denominator.
     assert is_correct(r"\frac12", "1/2")
