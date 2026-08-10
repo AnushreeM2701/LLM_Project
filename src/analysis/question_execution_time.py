@@ -35,6 +35,17 @@ def hard_tier_question_pool(df: pd.DataFrame) -> list:
     return sorted(sampled.tolist())
 
 
+def balanced_question_pool(df: pd.DataFrame) -> dict:
+    """Same 40/40/40 pool, keyed by difficulty tier. Shared by
+    error_type_distribution.py and error_heatmap.py."""
+
+    return {
+        "Easy": sorted(df[df["Difficulty"] == "Easy"]["Question ID"].unique()),
+        "Medium": sorted(df[df["Difficulty"] == "Medium"]["Question ID"].unique()),
+        "Hard": hard_tier_question_pool(df),
+    }
+
+
 def plot_execution_time_by_difficulty(prompt: str, df: pd.DataFrame, question_pool: dict) -> None:
     """One panel per difficulty tier, points coloured by model, shared 0-300s Y-axis."""
 

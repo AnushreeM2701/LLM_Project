@@ -11,17 +11,8 @@ import pandas as pd
 
 from config.config import FIGURES_DIR, TABLES_DIR, MODEL_NAMES, PROMPT_TYPES, DIFFICULTIES
 from src.utils.io import load_results
-from src.analysis.question_execution_time import hard_tier_question_pool, MODEL_LABELS
+from src.analysis.question_execution_time import balanced_question_pool, MODEL_LABELS
 from src.analysis.error_definitions import ERROR_TYPE_DEFINITIONS
-
-def balanced_question_pool(df: pd.DataFrame) -> dict:
-    """Same 40/40/40 pool as question_execution_time.py / error_heatmap.py."""
-
-    return {
-        "Easy": sorted(df[df["Difficulty"] == "Easy"]["Question ID"].unique()),
-        "Medium": sorted(df[df["Difficulty"] == "Medium"]["Question ID"].unique()),
-        "Hard": hard_tier_question_pool(df),
-    }
 
 
 def error_type_difficulty_table(df: pd.DataFrame, model: str, prompt: str, pool: dict, error_type_order: list) -> pd.DataFrame:

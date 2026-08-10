@@ -12,22 +12,12 @@ import pandas as pd
 
 from config.config import FIGURES_DIR, MODEL_NAMES, DIFFICULTIES, PROMPT_TYPES
 from src.utils.io import load_results
-from src.analysis.question_execution_time import hard_tier_question_pool
+from src.analysis.question_execution_time import balanced_question_pool
 
 TOP_N = 6
 
 # Sequential single-hue (blue) ramp, light -> dark.
 CMAP = plt.cm.Blues
-
-
-def balanced_question_pool(df: pd.DataFrame) -> dict:
-    """Same 40/40/40 pool used by question_execution_time.py."""
-
-    return {
-        "Easy": sorted(df[df["Difficulty"] == "Easy"]["Question ID"].unique()),
-        "Medium": sorted(df[df["Difficulty"] == "Medium"]["Question ID"].unique()),
-        "Hard": hard_tier_question_pool(df),
-    }
 
 
 def top_error_types(n: int = TOP_N) -> list:

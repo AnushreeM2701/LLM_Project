@@ -14,11 +14,6 @@ transformations = (
     + (implicit_multiplication_application,)
 )
 
-
-# ==========================================================
-# NORMALIZE ANSWER
-# ==========================================================
-
 def normalize_answer(answer):
 
     if answer is None:
@@ -64,10 +59,6 @@ def normalize_answer(answer):
     return answer
 
 
-# ==========================================================
-# NUMBER CONVERSION
-# ==========================================================
-
 def to_number(value):
 
     # Mixed numbers ("2 1/3") must be checked BEFORE normalize_answer, which
@@ -105,10 +96,6 @@ def to_number(value):
     return None
 
 
-# ==========================================================
-# NUMERIC COMPARISON
-# ==========================================================
-
 def compare_numeric(gt, pred):
 
     gt_num = to_number(gt)
@@ -119,10 +106,6 @@ def compare_numeric(gt, pred):
 
     return math.isclose(gt_num, pred_num, rel_tol=1e-9, abs_tol=1e-9)
 
-
-# ==========================================================
-# ALGEBRAIC COMPARISON
-# ==========================================================
 
 def compare_symbolic(gt, pred):
 
@@ -140,18 +123,10 @@ def compare_symbolic(gt, pred):
         return False
 
 
-# ==========================================================
-# TEXT COMPARISON
-# ==========================================================
-
 def compare_text(gt, pred):
 
     return normalize_answer(gt) == normalize_answer(pred)
 
-
-# ==========================================================
-# MAIN COMPARISON
-# ==========================================================
 
 def is_correct(gt, pred):
 
@@ -166,10 +141,6 @@ def is_correct(gt, pred):
 
     return False
 
-
-# ==========================================================
-# EVALUATE RESPONSE
-# ==========================================================
 
 def evaluate_response(ground_truth, prediction):
 
