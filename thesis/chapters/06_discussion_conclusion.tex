@@ -16,16 +16,19 @@
 
 The most noticeable pattern in the error-type data is not how the models
 differ, but what they have in common. Combinatorial Counting Error is
-the most frequent error overall, making up 46 out of 136 incorrect
-responses (33.8\%) in the dataset. This is more than twice as many as
-the next most common category, Number Theory Error, which had 18
-responses (13.2\%). This shows that counting problems -- such as over-
-or under-counting, or confusing permutations with combinations -- are a
-shared structural weakness for Gemini, GPT-OSS-120B, and Mistral Large.
-It is not a problem unique to any one model or provider.
+the single most common error type for every model individually
+(Section~\ref{sec:rq1}): 15 of Gemini's 45 incorrect responses
+(33.3\%), 9 of GPT-OSS-120B's 36 incorrect responses (25.0\%), and 20 of
+Mistral Large's 45 incorrect responses (44.4\%). In each case this is
+clearly ahead of that model's own next most common error type
+(Incomplete Reasoning for Gemini and Mistral Large; Logical Reasoning
+Error for GPT-OSS-120B). This shows that counting problems -- such as
+over- or under-counting, or confusing permutations with combinations --
+are a shared structural weakness for Gemini, GPT-OSS-120B, and Mistral
+Large. It is not a problem unique to any one model or provider.
 
 This shared weakness should be considered alongside the Chi-square test
-result in Section~\ref{sec:rq1} ($\chi^2 = 27.95$, $p = 0.111$), which
+result in Section~\ref{sec:rq1} ($\chi^2 = 28.35$, $p = 0.101$), which
 does not show statistically significant evidence that the overall
 distribution of error types differs across models. Any model-specific
 patterns discussed below should be seen as descriptive observations, not
@@ -63,8 +66,8 @@ while Mistral Large's reasoning length is free to vary as much as the
 model chooses on a given question.
 
 This difference helps explain why only Mistral Large shows a gap in step
-counts between correct and incorrect Hard-tier answers (mean 13.68 vs.
-16.17; median 8.0 vs. 12.5), while Gemini and GPT-OSS-120B do not. If a
+counts between correct and incorrect Hard-tier answers (mean 12.59 vs.
+16.12; median 7.0 vs. 12.0), while Gemini and GPT-OSS-120B do not. If a
 model's internal reasoning-effort setting is pinned low and held
 constant, its reasoning length may have little additional room to expand
 specifically on the questions it struggles with, so correct and
@@ -93,37 +96,41 @@ accuracy significantly for two models, GPT-OSS-120B and Mistral Large,
 but not for Gemini. Section~\ref{sec:pipeline} explains that ToT
 requires about four times as many generation calls as CoT, and
 Section~\ref{sec:execution-time} shows the practical result: mean execution
-time increases by 2.50x for Gemini, 4.56x for GPT-OSS-120B, and 3.01x
+time increases by 2.29x for Gemini, 4.62x for GPT-OSS-120B, and 2.99x
 for Mistral Large. Whether this extra cost is justified depends on the
 model, and the answer is different for each one.
 
 For GPT-OSS-120B and Mistral Large, ToT is a strong option. Both models
 show a clear accuracy improvement in the Hard tier, where improvement is
-needed (Section~\ref{sec:overall-accuracy}), and the gain is large --
-15.6 percentage points for each model in this tier. GPT-OSS-120B has the
-biggest relative cost increase (4.56x, close to the expected 4x). Still,
-it is also the model with a significant McNemar result, which suggests
-that the extra computation leads to a real benefit.
+needed (Section~\ref{sec:overall-accuracy}): GPT-OSS-120B gains 20.0
+percentage points (45.0\% to 65.0\%) and Mistral Large gains 17.5
+percentage points (37.5\% to 55.0\%). GPT-OSS-120B has the biggest
+relative cost increase (4.62x, close to the expected 4x). Still, it is
+also the model with a significant McNemar result, which suggests that
+the extra computation leads to a real benefit.
 
-For Gemini, the case is weaker. Its Hard-tier accuracy does rise
-numerically under ToT (51.0\% to 56.9\%), and its Medium-tier accuracy
-actually falls slightly (100.0\% to 97.5\%). Still, neither change is
-distinguishable from chance given only 10 discordant pairs
-(Section~\ref{sec:overall-accuracy}). Gemini still pays a 2.50x
-execution-time cost for ToT, without a demonstrated accuracy benefit to
-offset it. It is worth being precise about what this non-significant
-result does and does not show: it does not prove that ToT has no effect
-on Gemini, only that this study's sample size cannot distinguish a real
-but modest effect from no effect at all. A larger sample of discordant
-pairs might yet disclose a significant difference in either direction.
+For Gemini, there is no case to make at all. Its Hard-tier accuracy is
+identical under both strategies (50.0\% for CoT and ToT), and its
+Medium-tier accuracy actually falls slightly under ToT (100.0\% to
+97.5\%). With only 7 discordant pairs, split 4 to 3 in CoT's favour
+(Section~\ref{sec:overall-accuracy}), McNemar's test gives $p = 1.0$ --
+about as clean a null result as this kind of test can produce. Gemini
+still pays a 2.29x execution-time cost for ToT, without any accuracy
+benefit to offset it, demonstrated or otherwise. It is worth being
+precise about what this non-significant result does and does not show:
+it does not prove that ToT has no effect on Gemini in principle, only
+that in this study's data, there is no detectable one, and what
+difference does exist points slightly the other way. A larger sample of
+discordant pairs might yet disclose a significant difference in either
+direction, but the current data give no reason to expect one favouring
+ToT.
 
 Overall, these results do not give a single answer to whether ToT is
 worth its cost. For two of the three models, ToT gives a clear and
-meaningful accuracy boost that likely justifies its 3--4.5x cost. For
-the third model, the cost is paid without a proven benefit, but this
-could be because the study did not have enough data to detect an effect.
-For any new model, this question should be tested directly, just as it
-was here.
+meaningful accuracy boost that likely justifies its 3--4.6x cost. For
+the third model, the cost is paid without any accuracy benefit at all,
+proven or otherwise. For any new model, this question should be tested
+directly, just as it was here.
 
 \section{Threats to Validity}
 \label{sec:threats-validity}
@@ -183,7 +190,7 @@ Finally, \textbf{small subgroup sample sizes} limit how much confidence
 can be placed in the more detailed breakdowns in this dissertation. The
 Hard tier's category counts range from 8 (Probability) to 16 (Algebra
 and Combinatorics), and RQ1's Chi-square test was flagged for a low
-minimum expected cell count of 0.265. Claims at the category level or
+minimum expected cell count of 0.286. Claims at the category level or
 for each model in each category should be seen as descriptive, not
 statistically confirmed, as already noted in Sections~\ref{sec:rq1}
 and~\ref{sec:limitations}.
@@ -248,15 +255,15 @@ related to whether its answer is correct. For Gemini and GPT-OSS-120B,
 there was no clear link on the Hard tier -- both correct and incorrect
 answers used about the same number of steps. For Mistral Large, however,
 incorrect answers on the Hard tier used more steps than correct ones
-(mean 16.17 vs. 13.68; median 12.5 vs. 8.0). This may be because Mistral
+(mean 16.12 vs. 12.59; median 12.0 vs. 7.0). This may be because Mistral
 Large does not have a way to limit its reasoning length, unlike the
 other two models.
 
 RQ3 looked at whether Tree-of-Thought (ToT) prompting leads to better
 answers than Chain-of-Thought (CoT) for each model. McNemar's Exact Test
 showed that ToT gave a significant improvement for GPT-OSS-120B
-($p = 0.021$) and Mistral Large ($p = 0.008$), but not for Gemini
-($p = 0.754$). The improvement was mainly seen in the Hard tier, where
+($p = 0.021$) and Mistral Large ($p = 0.016$), but not for Gemini
+($p = 1.0$). The improvement was mainly seen in the Hard tier, where
 there was more room to get better results. For Easy and Medium
 questions, accuracy was already very high for all models. Therefore, ToT
 is not equally helpful for every model, and its much longer execution

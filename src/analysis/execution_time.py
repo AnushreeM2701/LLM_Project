@@ -9,11 +9,14 @@ import pandas as pd
 
 from config.config import TABLES_DIR, MODEL_NAMES, PROMPT_TYPES
 from src.utils.io import load_results
+from src.analysis.question_execution_time import hard_tier_question_pool
 
 
 def summary_table() -> pd.DataFrame:
 
     df = load_results()
+    pool = hard_tier_question_pool(df)
+    df = df[(df["Difficulty"] != "Hard") | (df["Question ID"].isin(pool))]
     rows = []
 
     for model in MODEL_NAMES:

@@ -15,7 +15,6 @@ from config.config import FIGURES_DIR, TABLES_DIR, MODEL_NAMES, PROMPT_TYPES
 from src.utils.io import load_results
 from src.analysis.error_definitions import ERROR_TYPE_DEFINITIONS
 
-
 def common_wrong_hard_questions(df: pd.DataFrame, prompt: str) -> set:
     """Hard-tier Question IDs all 3 models got wrong, within one prompt."""
 

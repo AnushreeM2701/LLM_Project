@@ -22,8 +22,8 @@ using two prompting strategies:
 
 Research questions:
 
-- **RQ1** — What are the most common types of mathematical reasoning errors?
-- **RQ2** — At what step in the reasoning chain do errors occur?
+- **RQ1** — What are the most common types of mathematical reasoning errors, and does the distribution differ across models?
+- **RQ2** — Is there a descriptive relationship between step count and answer correctness, and does this pattern differ across models?
 - **RQ3** — Does ToT reduce final-answer errors compared to CoT?
 
 Error classification uses Gemini as the primary judge. An independent neutral-judge validation sample (to check for self-evaluation bias via Cohen's kappa) is supported in `src/evaluation/error_judge.py` but was not completed for the current results — the neutral judge model available on Groq's free tier hit its daily token quota well before finishing the validation sample; this is documented as a known limitation rather than silently omitted.
@@ -120,16 +120,16 @@ python -m src.evaluation.error_judge
 Run the statistical analysis (RQ1/RQ2/RQ3 + execution time), each writing to `outputs/tables/` and `outputs/figures/`:
 
 ```bash
-python -m src.analysis.descriptive
-python -m src.analysis.error_taxonomy           # RQ1 (overall ranking + chi-square/Fisher independence test)
+python -m src.analysis.descriptive              # accuracy tables (Wilson CI), Model x Prompt x Difficulty and Model x Category
+python -m src.analysis.error_taxonomy           # RQ1: Model x Error Type contingency table + chi-square/Fisher independence test
 python -m src.analysis.error_type_distribution  # Error Type x Difficulty, per model/prompt, balanced 40/40/40 pool
 python -m src.analysis.error_type_frequency     # Error Type frequency by model, Hard tier, common-wrong-question pool
 python -m src.analysis.error_heatmap            # Model x Difficulty x top-6 Error Type heatmap, balanced pool
-python -m src.analysis.error_location           # RQ2
-python -m src.analysis.prompt_comparison        # RQ3
-python -m src.analysis.execution_time           # summary table
+python -m src.analysis.step_count               # RQ2: step count vs correctness (descriptive only)
+python -m src.analysis.prompt_comparison        # RQ3: McNemar's Exact Test, CoT vs ToT, balanced 40/40/40 pool
+python -m src.analysis.execution_time           # summary table, balanced 40/40/40 pool
 python -m src.analysis.question_execution_time  # per-question execution time figures
-python -m src.analysis.question_correctness     # per-question correctness heatmaps + hardest-questions ranking
+python -m src.analysis.question_correctness     # per-question correctness heatmaps + hardest-questions ranking (full Hard tier, all 51)
 python -m src.analysis.error_subtype_words      # error-description word frequency, Hard tier, common-wrong-question pool
 python -m src.analysis.dataset_composition      # dataset composition figure
 ```
@@ -168,10 +168,12 @@ python outputs/interactive/build/build_dashboard.py
 
 **Anushree Mahesha**
 
-Master's Dissertation
+MSc Thesis, MSc in Data Science and Statistical Learning
 
-Department of Computer Science and Information Systems
+Department of Mathematics and Statistics
 
 University of Limerick
+
+Supervisor: Meghana Kshirsagar, Department of Computer Science and Information Systems
 
 2026

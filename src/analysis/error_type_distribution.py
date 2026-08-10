@@ -14,7 +14,6 @@ from src.utils.io import load_results
 from src.analysis.question_execution_time import hard_tier_question_pool, MODEL_LABELS
 from src.analysis.error_definitions import ERROR_TYPE_DEFINITIONS
 
-
 def balanced_question_pool(df: pd.DataFrame) -> dict:
     """Same 40/40/40 pool as question_execution_time.py / error_heatmap.py."""
 

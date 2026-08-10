@@ -20,32 +20,38 @@ OVERFLOW_MARKER_Y = 48.5
 
 
 def step_count_summary() -> pd.DataFrame:
-    """Model x Difficulty x Correct/Incorrect -> N, mean, median step count."""
+    """Model x Prompt x Difficulty x Correct/Incorrect -> N, mean, median step count."""
 
     df = load_results()
     df = df.copy()
     df["Answer Correct"] = df["Answer Correct"].astype(str).str.lower() == "true"
     df["Step Count"] = pd.to_numeric(df["Step Count"], errors="coerce")
 
+    pool = hard_tier_question_pool(df)
+    df = df[(df["Difficulty"] != "Hard") | (df["Question ID"].isin(pool))]
+
     rows = []
     for model in MODEL_NAMES:
-        for difficulty in DIFFICULTIES:
-            for correct in [True, False]:
-                subset = df[
-                    (df["Model"] == model)
-                    & (df["Difficulty"] == difficulty)
-                    & (df["Answer Correct"] == correct)
-                ]
-                if len(subset) == 0:
-                    continue
-                rows.append({
-                    "Model": model,
-                    "Difficulty": difficulty,
-                    "Correct": correct,
-                    "N": len(subset),
-                    "Mean Step Count": subset["Step Count"].mean(),
-                    "Median Step Count": subset["Step Count"].median(),
-                })
+        for prompt in PROMPT_TYPES:
+            for difficulty in DIFFICULTIES:
+                for correct in [True, False]:
+                    subset = df[
+                        (df["Model"] == model)
+                        & (df["Prompt"] == prompt)
+                        & (df["Difficulty"] == difficulty)
+                        & (df["Answer Correct"] == correct)
+                    ]
+                    if len(subset) == 0:
+                        continue
+                    rows.append({
+                        "Model": model,
+                        "Prompt": prompt,
+                        "Difficulty": difficulty,
+                        "Correct": correct,
+                        "N": len(subset),
+                        "Mean Step Count": subset["Step Count"].mean(),
+                        "Median Step Count": subset["Step Count"].median(),
+                    })
 
     return pd.DataFrame(rows)
 

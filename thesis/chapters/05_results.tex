@@ -11,7 +11,12 @@ coverage, and execution time.
 \label{sec:overall-accuracy}
 
 Table~\ref{tab:accuracy-difficulty} shows accuracy by model, difficulty
-tier, and prompting strategy.
+tier, and prompting strategy. Easy and Medium each use all 40 questions
+in that tier; Hard uses a seeded sample of 40 of the 51 available Hard
+questions, so that all three tiers are compared on the same sample size
+throughout this chapter (Section~\ref{sec:threats-validity}). The
+correctness heatmap in Section~\ref{sec:question-correctness} is the one
+exception and still covers the full 51 Hard-tier questions.
 
 \begin{table}[h]
   \centering
@@ -23,15 +28,15 @@ tier, and prompting strategy.
     \midrule
     \multirow{3}{*}{Gemini} & Easy & 95.0\% & 95.0\% \\
      & Medium & 100.0\% & 97.5\% \\
-     & Hard & 51.0\% & 56.9\% \\
+     & Hard & 50.0\% & 50.0\% \\
     \midrule
     \multirow{3}{*}{GPT-OSS-120B} & Easy & 100.0\% & 100.0\% \\
      & Medium & 100.0\% & 100.0\% \\
-     & Hard & 56.9\% & 72.5\% \\
+     & Hard & 45.0\% & 65.0\% \\
     \midrule
     \multirow{3}{*}{Mistral Large} & Easy & 97.5\% & 97.5\% \\
      & Medium & 100.0\% & 100.0\% \\
-     & Hard & 47.1\% & 62.7\% \\
+     & Hard & 37.5\% & 55.0\% \\
     \bottomrule
   \end{tabular}
 
@@ -45,18 +50,17 @@ tier, and prompting strategy.
 Easy and Medium accuracy is at or near ceiling (95--100\%) for every
 model and prompting strategy, with no accuracy below 95\%. The Hard tier
 is the only tier where accuracy varies meaningfully across models and
-prompting strategies, ranging from 47.1\% to 72.5\%. Because 80 of the
-131 questions (Easy and Medium combined) show almost no variation across
-models, any comparison between models based on overall accuracy is, in
-practice, driven almost entirely by performance on the 51 Hard-tier
-questions.
+prompting strategies, ranging from 37.5\% to 65.0\%. Because 80 of the
+120 questions in this balanced sample (Easy and Medium combined) show
+almost no variation across models, any comparison between models based
+on overall accuracy is, in practice, driven almost entirely by
+performance on the Hard tier.
 
 \subsection*{Precision of Accuracy Estimates}
 
 The accuracy percentages reported above are point estimates.
 Table~\ref{tab:ci-hard} reports their 95\% Wilson score confidence
-intervals (Section~\ref{sec:models}) for the Hard tier, where sample
-size is smallest ($n=51$) and accuracy estimates are least precise.
+intervals (Section~\ref{sec:models}) for the Hard tier.
 
 \begin{table}[h]
   \centering
@@ -66,29 +70,31 @@ size is smallest ($n=51$) and accuracy estimates are least precise.
     \toprule
     Model & Prompt & Accuracy & 95\% CI & Width \\
     \midrule
-    Gemini & CoT & 51.0\% & [37.7\%, 64.1\%] & 26.5pp \\
-    Gemini & ToT & 56.9\% & [43.3\%, 69.5\%] & 26.2pp \\
-    GPT-OSS-120B & CoT & 56.9\% & [43.3\%, 69.5\%] & 26.2pp \\
-    GPT-OSS-120B & ToT & 72.5\% & [59.1\%, 82.9\%] & 23.8pp \\
-    Mistral Large & CoT & 47.1\% & [34.1\%, 60.5\%] & 26.4pp \\
-    Mistral Large & ToT & 62.7\% & [49.0\%, 74.7\%] & 25.7pp \\
+    Gemini & CoT & 50.0\% & [35.2\%, 64.8\%] & 29.6pp \\
+    Gemini & ToT & 50.0\% & [35.2\%, 64.8\%] & 29.6pp \\
+    GPT-OSS-120B & CoT & 45.0\% & [30.7\%, 60.2\%] & 29.5pp \\
+    GPT-OSS-120B & ToT & 65.0\% & [49.5\%, 77.9\%] & 28.4pp \\
+    Mistral Large & CoT & 37.5\% & [24.2\%, 53.0\%] & 28.7pp \\
+    Mistral Large & ToT & 55.0\% & [39.8\%, 69.3\%] & 29.5pp \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Every Hard-tier interval spans roughly 24--27 percentage points,
+Every Hard-tier interval spans roughly 28--30 percentage points,
 reflecting the substantial sampling uncertainty at this sample size: for
-example, Gemini's 51.0\% CoT accuracy carries a 95\% CI of [37.7\%,
-64.1\%], meaning the data are consistent with Gemini's true Hard-tier
-CoT accuracy being anywhere from just above one-third to just below
-two-thirds. Easy and Medium tier intervals are considerably narrower
-(8.8--15.1 percentage points) despite similar sample sizes ($n=40$),
-because accuracy in those tiers sits close to the ceiling of 100\%,
-where the Wilson interval is naturally tighter. This asymmetry is a
-direct consequence of the near-ceiling effect discussed in
-Section~\ref{sec:threats-validity}: the Hard tier is simultaneously
-where this dissertation's most informative comparisons take place and
-where those comparisons are least statistically precise.
+example, Gemini's 50.0\% CoT accuracy carries a 95\% CI of [35.2\%,
+64.8\%], meaning the data are consistent with Gemini's true Hard-tier
+CoT accuracy being anywhere from about one-third to about two-thirds.
+Easy and Medium tier intervals are considerably narrower (8.8--15.1
+percentage points) despite using the exact same sample size as the Hard
+tier ($n=40$ throughout), because accuracy in those tiers sits close to
+the ceiling of 100\%, where the Wilson interval is naturally tighter.
+Since sample size is now held constant across all three tiers, this
+gives a clean, controlled comparison: the wide Hard-tier intervals
+cannot be attributed to a smaller sample, only to the ceiling effect
+discussed in Section~\ref{sec:threats-validity}. The Hard tier is
+simultaneously where this dissertation's most informative comparisons
+take place and where those comparisons are least statistically precise.
 
 \section{Accuracy by Mathematical Category}
 \label{sec:category-accuracy}
@@ -96,7 +102,12 @@ where those comparisons are least statistically precise.
 This section shows the accuracy results combined across difficulty
 tiers and prompting strategies, separated into the four mathematical
 categories in the dataset: Algebra, Combinatorics, Number Theory, and
-Probability.
+Probability. As in Section~\ref{sec:overall-accuracy}, the Hard tier
+uses the same seeded 40-of-51 balanced pool. The full breakdown by
+category, difficulty tier, and prompting strategy is available in
+\texttt{outputs/tables/accuracy\_by\_model\_category.csv}; the table
+below pools difficulty tier and prompting strategy together so that the
+category-level pattern is readable at a glance.
 
 \begin{table}[h]
   \centering
@@ -106,31 +117,31 @@ Probability.
     \toprule
     Model & Category & N & Accuracy \\
     \midrule
-    \multirow{4}{*}{Gemini} & Algebra & 72 & 79.2\% \\
-     & Combinatorics & 72 & 72.2\% \\
-     & Number Theory & 62 & 90.3\% \\
+    \multirow{4}{*}{Gemini} & Algebra & 62 & 80.6\% \\
+     & Combinatorics & 64 & 75.0\% \\
+     & Number Theory & 58 & 89.7\% \\
      & Probability & 56 & 80.4\% \\
     \midrule
-    \multirow{4}{*}{GPT-OSS-120B} & Algebra & 72 & 88.9\% \\
-     & Combinatorics & 72 & 84.7\% \\
-     & Number Theory & 62 & 87.1\% \\
+    \multirow{4}{*}{GPT-OSS-120B} & Algebra & 62 & 87.1\% \\
+     & Combinatorics & 64 & 82.8\% \\
+     & Number Theory & 58 & 86.2\% \\
      & Probability & 56 & 83.9\% \\
     \midrule
-    \multirow{4}{*}{Mistral Large} & Algebra & 72 & 88.9\% \\
-     & Combinatorics & 72 & 70.8\% \\
-     & Number Theory & 62 & 88.7\% \\
+    \multirow{4}{*}{Mistral Large} & Algebra & 62 & 87.1\% \\
+     & Combinatorics & 64 & 70.3\% \\
+     & Number Theory & 58 & 89.7\% \\
      & Probability & 56 & 78.6\% \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 Combinatorics is the weakest category for all models. Gemini has its
-lowest accuracy here at 72.2\%, Mistral Large at 70.8\%, and
-GPT-OSS-120B has its second-lowest, just above Probability (84.7\%
+lowest accuracy here at 75.0\%, Mistral Large at 70.3\%, and
+GPT-OSS-120B has its second-lowest, just below Probability (82.8\%
 compared to 83.9\%). Number Theory is a strong category for all three
-models. It is the highest for Gemini (90.3\%) and the second-highest for
-both GPT-OSS-120B (87.1\%) and Mistral Large (88.7\%), both just behind
-Algebra.
+models. It is the highest for both Gemini (89.7\%) and Mistral Large
+(89.7\%), and the second-highest for GPT-OSS-120B (86.2\%), just behind
+Algebra (87.1\%).
 
 This pattern corresponds to the RQ1 finding that Combinatorial Counting
 Error is the most common error type for all three models
@@ -218,18 +229,19 @@ than aggregate accuracy, that the Easy and Medium tiers carry almost no
 diagnostic information about error behaviour; the entire error-type
 picture is effectively a Hard-tier picture.
 
-A Chi-square test of independence on the full, unrestricted Model x
-Error Type contingency table (all 136 errors across the complete
-131-question dataset, not the balanced pool shown above) gives $\chi^2 =
-27.95$, $df = 20$, $p = 0.111$. At the conventional threshold of $p <
-0.05$, this does not provide statistically significant evidence that the
-overall distribution of error types differs across models. This result
-carries a caution flag: the minimum expected cell count in this table is
-0.265, well below the conventional threshold of 5 below which the
-Chi-square approximation becomes unreliable. This non-significant result
-should therefore be read as inconclusive given the available sample
-size, consistent with the granular breakdown above showing that most
-error-type cells contain very few observations per model.
+A Chi-square test of independence on the Model x Error Type contingency
+table (all 126 errors across the balanced 40/40/40 pool used throughout
+this chapter, not the smaller common-wrong-question pool used in
+Section~\ref{sec:hard-tier-freq}) gives $\chi^2 = 28.35$, $df = 20$, $p =
+0.101$. At the conventional threshold of $p < 0.05$, this does not
+provide statistically significant evidence that the overall distribution
+of error types differs across models. This result carries a caution
+flag: the minimum expected cell count in this table is 0.286, well below
+the conventional threshold of 5 below which the Chi-square approximation
+becomes unreliable. This non-significant result should therefore be read
+as inconclusive given the available sample size, consistent with the
+granular breakdown above showing that most error-type cells contain very
+few observations per model.
 
 \section{Error Type Frequency in the Hard Tier}
 \label{sec:hard-tier-freq}
@@ -273,29 +285,29 @@ Section~\ref{sec:overall-accuracy}).
 This section presents the mean and median number of reasoning steps
 taken for each model, organised by difficulty tier and whether the final
 answer was correct, pooling CoT and ToT responses together for each
-model/difficulty/correctness combination. On the Easy and Medium tiers,
-all three models perform nearly perfectly: GPT-OSS-120B answers every
-Easy and Medium question correctly with both prompting strategies (80 out
-of 80 in each tier), and Gemini and Mistral Large each have only one to
-four incorrect responses in these tiers combined. With so few incorrect
-cases, it is not possible to make a meaningful comparison between correct
-and incorrect step counts except on the Hard tier, where all three models
-have a substantial number of both correct and incorrect answers (36 to 47
-incorrect responses per model).
+model/difficulty/correctness combination. As in Section~\ref{sec:overall-accuracy},
+the Hard tier uses the same seeded 40-of-51 balanced pool. On the Easy
+and Medium tiers, all three models perform nearly perfectly: GPT-OSS-120B
+answers every Easy and Medium question correctly with both prompting
+strategies (80 out of 80 in each tier), and Gemini and Mistral Large each
+have only one to four incorrect responses in these tiers combined. With
+so few incorrect cases, it is not possible to make a meaningful
+comparison between correct and incorrect step counts except on the Hard
+tier, where all three models have a substantial number of both correct
+and incorrect answers (36 to 43 incorrect responses per model).
 
 On the Hard tier, Gemini and GPT-OSS-120B show almost no difference in
 step count between correct and incorrect responses: Gemini's mean step
-count is 7.85 for correct answers and 7.77 for incorrect ones, and
-GPT-OSS-120B's is 5.95 for correct and 6.14 for incorrect. For these two
+count is 7.98 for correct answers and 7.73 for incorrect ones, and
+GPT-OSS-120B's is 5.89 for correct and 6.14 for incorrect. For these two
 models, a longer or shorter reasoning process does not seem to be linked
 to whether the final answer was correct.
 
 Mistral Large shows a clearly different pattern. Its incorrect Hard-tier
-answers have a mean step count of 16.17 (median 12.5), compared with a
-mean of 13.68 (median 8.0) for correct answers. The median is
-substantially higher for incorrect answers (56\% higher than for correct
-answers), while the mean is also higher but by a smaller margin (18\%
-higher). Figures~\ref{fig:step-count-cot} and~\ref{fig:step-count-tot}
+answers have a mean step count of 16.12 (median 12.0), compared with a
+mean of 12.59 (median 7.0) for correct answers. The median is
+substantially higher for incorrect answers (71\% higher than for correct
+answers), while the mean is also higher (28\% higher). Figures~\ref{fig:step-count-cot} and~\ref{fig:step-count-tot}
 show the step count per question for CoT and ToT and illustrate this
 visually. Mistral Large's markers are consistently more spread out and
 reach further into the 20 to 50 step range than Gemini's or
@@ -322,44 +334,48 @@ across all difficulty tiers.
 This section examines whether Tree-of-Thought (ToT) prompting leads to
 significantly different answer accuracy compared to Chain-of-Thought
 (CoT) prompting for each model. The analysis uses McNemar's Exact Test on
-paired results from all 131 questions.
+paired results from the balanced 120-question pool used throughout this
+chapter (Section~\ref{sec:overall-accuracy}).
 
-When combining all three difficulty tiers, every model shows higher
-overall accuracy with ToT than with CoT: Gemini goes from 79.4\% to
-80.9\%, GPT-OSS-120B from 83.2\% to 89.3\%, and Mistral Large from 78.6\%
-to 84.7\%. However, because each model answers the same 131 questions
-with both strategies, these percentages cannot be directly compared. Only
-the questions where the two strategies give different answers (the
-discordant pairs) show which strategy performs better.
+When combining all three difficulty tiers, GPT-OSS-120B and Mistral
+Large both show higher overall accuracy with ToT than with CoT:
+GPT-OSS-120B goes from 81.7\% to 88.3\%, and Mistral Large from 78.3\% to
+84.2\%. Gemini shows almost no difference, and if anything a very slight
+edge for CoT: 81.7\% with CoT versus 80.8\% with ToT. However, because
+each model answers the same 120 questions with both strategies, these
+percentages cannot be directly compared. Only the questions where the
+two strategies give different answers (the discordant pairs) show which
+strategy performs better.
 
-For Gemini, there are 10 discordant pairs: 4 questions are correct only
-with CoT, and 6 are correct only with ToT. McNemar's exact test gives
-$p = 0.754$, which is not significant. Although ToT shows higher raw
-accuracy, this difference could easily be due to chance because there
-are so few discordant pairs.
+For Gemini, there are 7 discordant pairs: 4 questions are correct only
+with CoT, and 3 are correct only with ToT. McNemar's exact test gives
+$p = 1.0$, which is not significant. With so few discordant pairs, and
+split almost evenly between the two strategies, there is no evidence
+here that either strategy is better for Gemini.
 
-For GPT-OSS-120B, there are also 10 discordant pairs, but the results are
-much more one-sided: only 1 question is correct only with CoT, while 9
-are correct only with ToT. This gives $p = 0.021$, which is significant
-at the 0.05 level.
+For GPT-OSS-120B, there are 10 discordant pairs, and the results are much
+more one-sided: only 1 question is correct only with CoT, while 9 are
+correct only with ToT. This gives $p = 0.021$, which is significant at
+the 0.05 level.
 
-For Mistral Large, the result is the most one-sided: out of 8 discordant
-pairs, none are correct only with CoT, and all 8 are correct only with
+For Mistral Large, the result is the most one-sided: out of 7 discordant
+pairs, none are correct only with CoT, and all 7 are correct only with
 ToT. Every disagreement between the two strategies favours ToT. This
-gives $p = 0.008$, which is the strongest evidence among the three
+gives $p = 0.016$, which is the strongest evidence among the three
 models that ToT affects performance.
 
 Overall, these results do not support a general claim that ``ToT
 improves performance.'' The improvement is statistically significant for
 two of the three models (GPT-OSS-120B and Mistral Large), but not for
-Gemini, where the higher ToT accuracy could be due to chance because
-there are so few discordant pairs. The per-tier accuracy results in
+Gemini, where there is no meaningful difference between the two
+strategies at all. The per-tier accuracy results in
 Table~\ref{tab:accuracy-difficulty} show that this pattern is most
 noticeable in the Hard tier. In the Easy and Medium tiers, accuracy is
 already very high for all models, so there is little room for a
 prompting strategy to make a measurable difference.
 
 \section{Question-Level Correctness Across Conditions}
+\label{sec:question-correctness}
 
 This section examines correctness by focusing on each question instead
 of each model. It considers how consistently each question is answered
@@ -433,13 +449,14 @@ the generation calls of CoT per question (three branch generations plus
 one selection call, versus a single CoT call), so a substantial increase
 in wall-clock time under ToT is expected.
 
-Pooling across all three difficulty tiers, mean execution time per
-response is 12.64s (CoT) versus 31.62s (ToT) for Gemini, a 2.50x
-increase; 9.77s versus 44.55s for GPT-OSS-120B, a 4.56x increase, closest
-to the theoretical 4x call-count ratio; and 43.42s versus 130.80s for
-Mistral Large, a 3.01x increase. Mistral Large is markedly slower than
-the other two models under both prompting strategies, consistent with
-its free-tier rate limit of 2 requests per minute described in
+Pooling across all three difficulty tiers (the same balanced 120-question
+pool used throughout this chapter), mean execution time per response is
+13.36s (CoT) versus 30.57s (ToT) for Gemini, a 2.29x increase; 9.18s
+versus 42.41s for GPT-OSS-120B, a 4.62x increase, closest to the
+theoretical 4x call-count ratio; and 43.21s versus 129.38s for Mistral
+Large, a 2.99x increase. Mistral Large is markedly slower than the other
+two models under both prompting strategies, consistent with its
+free-tier rate limit of 2 requests per minute described in
 Section~\ref{sec:pipeline}.
 
 Figure~\ref{fig:execution-time-tot} shows this per question under ToT:

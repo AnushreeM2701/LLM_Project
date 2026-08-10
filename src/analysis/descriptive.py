@@ -9,6 +9,15 @@ import pandas as pd
 from config.config import TABLES_DIR, MODEL_NAMES, PROMPT_TYPES
 from src.utils.io import load_results
 from src.utils.stats import wilson_ci
+from src.analysis.question_execution_time import hard_tier_question_pool
+
+
+def _restrict_hard_tier(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep Easy/Medium as-is; restrict Hard to the seeded 40-question balanced pool."""
+
+    pool = hard_tier_question_pool(df)
+    is_hard = df["Difficulty"] == "Hard"
+    return df[(~is_hard) | (is_hard & df["Question ID"].isin(pool))]
 
 
 def _accuracy_row(df: pd.DataFrame, group_desc: dict) -> dict:
@@ -27,24 +36,9 @@ def _accuracy_row(df: pd.DataFrame, group_desc: dict) -> dict:
     }
 
 
-def accuracy_by_model_prompt() -> pd.DataFrame:
-
-    df = load_results()
-    rows = []
-
-    for model in MODEL_NAMES:
-        for prompt in PROMPT_TYPES:
-            subset = df[(df["Model"] == model) & (df["Prompt"] == prompt)]
-            if len(subset) == 0:
-                continue
-            rows.append(_accuracy_row(subset, {"Model": model, "Prompt": prompt}))
-
-    return pd.DataFrame(rows)
-
-
 def accuracy_by_model_prompt_difficulty() -> pd.DataFrame:
 
-    df = load_results()
+    df = _restrict_hard_tier(load_results())
     rows = []
 
     for model in MODEL_NAMES:
@@ -66,15 +60,25 @@ def accuracy_by_model_prompt_difficulty() -> pd.DataFrame:
 
 def accuracy_by_model_category() -> pd.DataFrame:
 
-    df = load_results()
+    df = _restrict_hard_tier(load_results())
     rows = []
 
     for model in MODEL_NAMES:
         for category in sorted(df["Category"].dropna().unique()):
-            subset = df[(df["Model"] == model) & (df["Category"] == category)]
-            if len(subset) == 0:
-                continue
-            rows.append(_accuracy_row(subset, {"Model": model, "Category": category}))
+            for difficulty in ["Easy", "Medium", "Hard"]:
+                for prompt in PROMPT_TYPES:
+                    subset = df[
+                        (df["Model"] == model)
+                        & (df["Category"] == category)
+                        & (df["Difficulty"] == difficulty)
+                        & (df["Prompt"] == prompt)
+                    ]
+                    if len(subset) == 0:
+                        continue
+                    rows.append(_accuracy_row(
+                        subset,
+                        {"Model": model, "Category": category, "Difficulty": difficulty, "Prompt": prompt},
+                    ))
 
     return pd.DataFrame(rows)
 
@@ -84,7 +88,6 @@ def run():
     os.makedirs(TABLES_DIR, exist_ok=True)
 
     tables = {
-        "accuracy_by_model_prompt.csv": accuracy_by_model_prompt(),
         "accuracy_by_model_prompt_difficulty.csv": accuracy_by_model_prompt_difficulty(),
         "accuracy_by_model_category.csv": accuracy_by_model_category(),
     }
