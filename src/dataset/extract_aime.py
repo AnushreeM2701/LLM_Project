@@ -8,7 +8,6 @@ import re
 
 import pdfplumber
 import pandas as pd
-from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 
 from config.config import AIME_MASTER_PATH, RAW_DIR
@@ -104,18 +103,16 @@ def extract_aime_dataset():
     with pd.ExcelWriter(AIME_MASTER_PATH, engine="openpyxl") as writer:
         df.to_excel(writer, sheet_name="All_Questions", index=False)
 
-    wb = load_workbook(AIME_MASTER_PATH)
-    ws = wb["All_Questions"]
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
-    ws.freeze_panes = "A2"
-    for row in ws.iter_rows():
-        for cell in row:
-            cell.alignment = Alignment(wrap_text=True, vertical="top")
-    widths = {"A": 20, "B": 10, "C": 8, "D": 8, "E": 16, "F": 18, "G": 12, "H": 12, "I": 100, "J": 18}
-    for col, width in widths.items():
-        ws.column_dimensions[col].width = width
-    wb.save(AIME_MASTER_PATH)
+        ws = writer.sheets["All_Questions"]
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+        ws.freeze_panes = "A2"
+        for row in ws.iter_rows():
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+        widths = {"A": 20, "B": 10, "C": 8, "D": 8, "E": 16, "F": 18, "G": 12, "H": 12, "I": 100, "J": 18}
+        for col, width in widths.items():
+            ws.column_dimensions[col].width = width
 
     print(f"Extracted {len(df)} AIME questions -> {AIME_MASTER_PATH}")
     print("NOTE: newly extracted rows need manual Include/Category curation "
