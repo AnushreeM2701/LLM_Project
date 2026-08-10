@@ -57,15 +57,12 @@ def run():
         per_model_counts = {}
         shared_max = 0
         all_examples = {}
+        combined_freq = []
         for model in MODEL_NAMES:
             model_wrong = pool[pool["Model"] == model]
             counts = Counter(model_wrong["Error Type"])
             freq = pd.DataFrame(sorted(counts.items(), key=lambda kv: kv[1]), columns=["Error Type", "Count"])
-            freq.to_csv(
-                os.path.join(TABLES_DIR, f"error_type_frequency_hard_{model}_{prompt}.csv"),
-                index=False,
-            )
-            print(f"Saved -> {os.path.join(TABLES_DIR, f'error_type_frequency_hard_{model}_{prompt}.csv')}")
+            combined_freq.append(freq.assign(Model=model))
             per_model_counts[model] = {"freq": freq, "n": len(model_wrong)}
             if len(freq):
                 shared_max = max(shared_max, freq["Count"].max())
@@ -73,6 +70,12 @@ def run():
                 t = row["Error Type"]
                 if t not in all_examples and str(row["Error Subtype"]).strip():
                     all_examples[t] = row["Error Subtype"]
+
+        combined_path = os.path.join(TABLES_DIR, f"error_type_frequency_hard_{prompt}.csv")
+        pd.concat(combined_freq, ignore_index=True)[["Model", "Error Type", "Count"]].to_csv(
+            combined_path, index=False
+        )
+        print(f"Saved -> {combined_path}")
 
         xlim = (0, math.ceil(shared_max * 1.15) or 1)
         all_error_types = sorted(

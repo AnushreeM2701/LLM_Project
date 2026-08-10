@@ -90,16 +90,20 @@ def plot_prompt_tables(prompt: str, df: pd.DataFrame, pool: dict, error_type_ord
     fig = plt.figure(figsize=(20, 10))
     gs = fig.add_gridspec(2, len(MODEL_NAMES), height_ratios=[3, 1.6], hspace=0.35)
 
+    os.makedirs(TABLES_DIR, exist_ok=True)
+    combined_tables = []
+
     for col, model in enumerate(MODEL_NAMES):
         table_df = error_type_difficulty_table(df, model, prompt, pool, error_type_order)
-
-        os.makedirs(TABLES_DIR, exist_ok=True)
-        csv_path = os.path.join(TABLES_DIR, f"error_type_distribution_{model}_{prompt}.csv")
-        table_df.to_csv(csv_path, index=False)
-        print(f"Saved -> {csv_path}")
+        combined_tables.append(table_df.assign(Model=model))
 
         ax = fig.add_subplot(gs[0, col])
         render_table_image(ax, table_df, MODEL_LABELS[model])
+
+    combined_path = os.path.join(TABLES_DIR, f"error_type_distribution_{prompt}.csv")
+    combined_columns = ["Model", "Error Type"] + DIFFICULTIES + ["Total"]
+    pd.concat(combined_tables, ignore_index=True)[combined_columns].to_csv(combined_path, index=False)
+    print(f"Saved -> {combined_path}")
 
     glossary_ax = fig.add_subplot(gs[1, :])
     render_glossary_panel(glossary_ax)

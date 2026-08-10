@@ -101,15 +101,12 @@ def run():
         per_model_freq = {}
         shared_max = 0
         word_examples = {}
+        combined_freq = []
         for model in MODEL_NAMES:
             model_subtypes = pool[pool["Model"] == model]["Error Subtype"]
             counts = word_frequency(model_subtypes)
             freq = pd.DataFrame({"Word": top_words, "Count": [counts.get(w, 0) for w in top_words]})
-            freq.to_csv(
-                os.path.join(TABLES_DIR, f"error_subtype_word_frequency_hard_{model}_{prompt}.csv"),
-                index=False,
-            )
-            print(f"Saved -> {os.path.join(TABLES_DIR, f'error_subtype_word_frequency_hard_{model}_{prompt}.csv')}")
+            combined_freq.append(freq.assign(Model=model))
             per_model_freq[model] = freq
             shared_max = max(shared_max, freq["Count"].max())
             for w in top_words:
@@ -117,6 +114,12 @@ def run():
                     example = word_example(model_subtypes, w)
                     if example:
                         word_examples[w] = example
+
+        combined_path = os.path.join(TABLES_DIR, f"error_subtype_word_frequency_hard_{prompt}.csv")
+        pd.concat(combined_freq, ignore_index=True)[["Model", "Word", "Count"]].to_csv(
+            combined_path, index=False
+        )
+        print(f"Saved -> {combined_path}")
 
         xlim = (0, math.ceil(shared_max * 1.15) or 1)
 

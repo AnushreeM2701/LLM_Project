@@ -1,0 +1,27 @@
+Model,Error Type,Easy,Medium,Hard,Total
+gemini,Combinatorial Counting Error,1,1,8,10
+gemini,Incomplete Reasoning,0,0,3,3
+gemini,Incorrect Assumption,0,0,1,1
+gemini,Number Theory Error,0,0,1,1
+gemini,Probability Reasoning Error,0,0,2,2
+gemini,Logical Reasoning Error,0,0,1,1
+gemini,Formula Misapplication,0,0,1,1
+gemini,Arithmetic Error,1,0,1,2
+gemini,Algebraic Manipulation Error,0,0,1,1
+gemini,Other,0,0,1,1
+gemini,Total incorrect,2,1,20,23
+groq,Combinatorial Counting Error,0,0,5,5
+groq,Incorrect Assumption,0,0,1,1
+groq,Number Theory Error,0,0,2,2
+groq,Probability Reasoning Error,0,0,1,1
+groq,Logical Reasoning Error,0,0,2,2
+groq,Formula Misapplication,0,0,2,2
+groq,Answer Extraction Error,0,0,1,1
+groq,Total incorrect,0,0,14,14
+mistral,Combinatorial Counting Error,1,0,8,9
+mistral,Incomplete Reasoning,0,0,2,2
+mistral,Incorrect Assumption,0,0,3,3
+mistral,Number Theory Error,0,0,1,1
+mistral,Probability Reasoning Error,0,0,3,3
+mistral,Formula Misapplication,0,0,1,1
+mistral,Total incorrect,1,0,18,19

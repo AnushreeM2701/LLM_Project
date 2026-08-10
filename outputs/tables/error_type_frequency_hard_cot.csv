@@ -1,0 +1,22 @@
+Model,Error Type,Count
+gemini,Other,1
+gemini,Probability Reasoning Error,1
+gemini,Number Theory Error,2
+gemini,Logical Reasoning Error,2
+gemini,Incorrect Assumption,2
+gemini,Formula Misapplication,2
+gemini,Incomplete Reasoning,3
+gemini,Combinatorial Counting Error,4
+groq,Arithmetic Error,1
+groq,Algebraic Manipulation Error,2
+groq,Incorrect Assumption,2
+groq,Number Theory Error,2
+groq,Combinatorial Counting Error,2
+groq,Probability Reasoning Error,3
+groq,Logical Reasoning Error,5
+mistral,Logical Reasoning Error,1
+mistral,Incorrect Assumption,2
+mistral,Probability Reasoning Error,2
+mistral,Incomplete Reasoning,3
+mistral,Number Theory Error,3
+mistral,Combinatorial Counting Error,6
