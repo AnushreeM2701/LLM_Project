@@ -1,35 +1,205 @@
 \chapter{Application and Case Study}
 \label{chap:case_study}
 
-% YOU WRITE THIS CHAPTER. Per your outline: "detailed introduction &
-% analysis of data." This is where the dataset and experimental pipeline
-% get described concretely, and where code/pipeline detail that's too
-% long for the main text should be pointed at the Appendix instead of
-% included inline.
+% Per the outline: "detailed introduction & analysis of data." This is
+% where the dataset and experimental pipeline are described concretely;
+% code/pipeline detail too long for the main text is pointed at the
+% Appendix instead of included inline.
 
-\section{Overview}
-% One short paragraph: what this chapter covers and how it's organised.
+This chapter gives a clear overview of the dataset and experimental
+process used in this study. It describes the evaluation dataset with
+examples, explains how the 786 model responses were collected, reports on
+data quality checks that found real bugs, and shows where to find the
+full code and repository for reproducibility.
 
 \section{Data Introduction}
-% Walk through the actual 131-question dataset concretely: where each
-% tier came from, how many questions, what a typical question/ground
-% truth looks like (a worked example or two makes this section much
-% stronger than just the summary table already in Chapter~\ref{chap:methodology}).
+\label{sec:data-intro}
+
+The evaluation dataset has 131 math questions from two sources: Hendrycks
+MATH (40 Easy and 40 Medium questions) and AIME (51 Hard questions). Each
+question includes a unique ID, category, difficulty tier, source, the
+question text, and the correct final answer.
+Table~\ref{tab:examples-full} gives one example from each of the four
+mathematical categories at every difficulty tier, twelve examples in
+total, to show what a typical question and its answer look like across
+the full dataset, not just at a single difficulty level.
+
+\begin{longtable}{p{1.6cm}p{1.5cm}p{6.7cm}p{1.5cm}}
+  \caption{One worked example from each category, at every difficulty tier.} \label{tab:examples-full} \\
+  \toprule
+  Question ID & Difficulty & Question & Answer \\
+  \midrule
+  \endfirsthead
+  \toprule
+  Question ID & Difficulty & Question & Answer \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  ALG\_E\_003 & Easy &
+    $3^n = 3 \cdot 9^3 \cdot 81^2$. What is the value of $n$? & 15 \\[4pt]
+  COMB\_E\_001 & Easy &
+    23 people attend a party. Each person shakes hands with at most 22
+    other people. What is the maximum possible number of handshakes,
+    assuming that any two people can shake hands at most once? & 253 \\[4pt]
+  NT\_E\_001 & Easy &
+    $100_{10}$ in base $b$ has exactly 5 digits. What is the value of
+    $b$? & 3 \\[4pt]
+  PROB\_E\_001 & Easy &
+    A bag contains ten balls, some of which are red and the rest of
+    which are yellow. When two balls are drawn at random at the same
+    time, the probability that both balls are red is $\frac{1}{15}$.
+    How many balls in the bag are red? & 3 \\[4pt]
+  ALG\_M\_001 & Medium &
+    A ball travels on a parabolic path in which the height (in feet) is
+    given by the expression $-16t^2+32t+15$, where $t$ is the time
+    after launch. What is the maximum height of the ball, in feet? &
+    31 \\[4pt]
+  COMB\_M\_002 & Medium &
+    A diagonal of a polygon is a segment joining two nonconsecutive
+    vertices of the polygon. How many diagonals does a regular octagon
+    have? & 20 \\[4pt]
+  NT\_M\_001 & Medium &
+    A composite number is a number that has two or more prime factors.
+    The number 87 can be expressed as the sum of two composite numbers
+    in many ways. What is the minimum positive difference between two
+    such numbers? & 3 \\[4pt]
+  PROB\_M\_001 & Medium &
+    2 distinct vertices of an octagon are chosen at random. What is the
+    probability that they are adjacent? & $\frac{2}{7}$ \\[4pt]
+  ALG\_H\_001 & Hard &
+    Every morning Aya goes for a 9-kilometer-long walk and stops at a
+    coffee shop afterwards. When she walks at a constant speed of $s$
+    kilometers per hour, the walk takes her 4 hours, including $t$
+    minutes spent in the coffee shop. When she walks $s+2$ kilometers
+    per hour, the walk takes her 2 hours and 24 minutes, including $t$
+    minutes spent in the coffee shop. Suppose Aya walks at $s+\frac12$
+    kilometers per hour. Find the number of minutes the walk takes her,
+    including the $t$ minutes spent in the coffee shop. & 204 \\[4pt]
+  COMB\_H\_001 & Hard &
+    Alice and Bob play the following game. A stack of $n$ tokens lies
+    before them. The players take turns with Alice going first. On each
+    turn, the player removes 1 token or 4 tokens from the stack. The
+    player who removes the last token wins. Find the number of positive
+    integers $n$ less than or equal to 2024 such that there is a
+    strategy that guarantees that Bob wins, regardless of Alice's
+    moves. & 809 \\[4pt]
+  NT\_H\_008 & Hard &
+    Find the sum of all positive integers $n$ such that $n+2$ divides
+    the product $3(n+3)(n^2+9)$. & 49 \\[4pt]
+  PROB\_H\_001 & Hard &
+    Jen enters a lottery by selecting 4 distinct elements of $S =
+    \{1,2,\ldots,10\}$. Then four elements of $S$ are drawn at random.
+    Jen wins a prize if at least two of her numbers were drawn, and
+    wins the grand prize if all four of her numbers were drawn. The
+    probability that Jen wins the grand prize given that Jen wins a
+    prize is $m/n$ where $m$ and $n$ are relatively prime positive
+    integers. Find $m+n$. & 116 \\
+\end{longtable}
+
+These twelve examples make the differences between categories and
+difficulty tiers clear, not just by their labels. Within a category, the
+Easy and Medium examples are typically directly computable from the
+question as stated, while the Hard (AIME) examples require a longer
+chain of intermediate reasoning before the final numeric answer can be
+reached, illustrated here by the Algebra, Combinatorics, and Probability
+Hard-tier examples, each of which needs several derived quantities
+before the final step. The Algebra examples are single equations or
+expressions to solve for one unknown or one value. The Number Theory
+examples require reasoning about divisibility or base-representation
+conditions across all positive integers, not just a fixed set of
+candidates. The Probability examples need a probability calculation over
+a combinatorial structure. The Combinatorics examples require
+recognising a counting or game-theoretic structure, from a direct
+counting formula at the Easy tier to a strategy-based argument at the
+Hard tier. The Hard-tier questions, drawn from AIME, additionally
+require the kind of open-ended multi-step derivation characteristic of
+that source, compared with the more directly computable
+Hendrycks-sourced examples at the Easy and Medium tiers.
 
 \section{Experimental Pipeline}
-% How the 786 (131 questions x 3 models x 2 prompt types) responses were
-% actually collected -- ask me to explain the resumable/checkpointed
-% design and why it mattered practically (e.g. provider daily quotas
-% being hit and recovering mid-collection).
+\label{sec:pipeline}
+
+The experimental pipeline gathers 786 responses in total. This comes from
+running 131 questions with both Chain-of-Thought and Tree-of-Thought
+methods across three models (131 $\times$ 2 $\times$ 3 = 786). Instead of
+processing everything in one long, uninterruptible batch, the pipeline is
+built to be resumable and uses checkpoints. This was important because
+free-tier API quotas were reached several times during data collection.
+
+Each experiment is identified by its Question ID, model, and prompt type.
+Before starting, the pipeline checks which experiment combinations are
+already in the results file and skips those that are done. This means
+the same script can simply be re-run to continue from wherever it
+previously stopped, without manual tracking or restarting from scratch.
+Each result is saved to the results file as soon as it finishes, one row
+at a time. If the run is interrupted by an error, quota limit, or if the
+process is stopped, all completed work is preserved.
+
+This approach was important because the three providers have very
+different free-tier rate limits. Mistral is limited to 2 requests per
+minute, so it is much slower than Gemini or Groq. For example, Mistral
+takes about 5 to 6 hours for a full dataset pass, while the other two
+take only tens of minutes. To avoid wasting time, all three models run at
+the same time, each in its own thread. This means the total run time
+depends only on the slowest model. If a model's daily quota runs out
+during a run, its thread stops without affecting the others or losing
+any collected data. The run can be repeated later when the quota resets,
+and only the unfinished combinations are processed.
+
+Each result row also includes provenance information in addition to the
+raw response. This includes the exact model version returned by the
+provider's API (which may differ from the configured model alias, as
+explained in Chapter~\ref{chap:methodology}), the specific prompt version
+used, and the start time, end time, and execution time for each call.
 
 \section{Data Quality Assurance}
-% This is worth a section: describe the correctness-invariant check that
-% caught real answer-extraction bugs during error classification, and
-% how each was found/fixed/verified. Ask me to walk you through the
-% specific examples (e.g. the "\dfrac" LaTeX macro bug, the embedded-
-% ordinal-number bug) so you can describe the actual failure and fix in
-% your own words -- this is a genuine methodological strength worth
-% reporting properly, not a footnote.
+\label{sec:data-quality}
+
+To ensure the automated pipeline works correctly, a clear rule is
+enforced: Answer Correct and Error Type must always agree. If a response
+is marked incorrect but labelled with the error type ``Correct'' (or the
+other way around), it signals a bug, not a real reasoning issue. This
+rule is enforced in the code with \texttt{assert\_no\_stale\_error\_labels},
+instead of just being assumed to hold. Checking results against this
+rule during error classification helped surface two real answer-extraction
+bugs that would have otherwise gone unnoticed and produced wrong data.
+
+The first bug was related to LaTeX fraction notation. The extraction
+logic could handle the basic \texttt{\textbackslash frac\{a\}\{b\}}
+macro, but not the \texttt{\textbackslash dfrac} (display-style) or
+\texttt{\textbackslash tfrac} (text-style) versions. If a model's
+response used \texttt{\textbackslash dfrac\{3\}\{16\}} as the final
+answer, the macro stayed in the text, and the fallback numeric extraction
+picked up just the digit ``3'' instead of the correct value ``3/16''.
+This meant a correct answer was marked as incorrect because of a parsing
+error. This issue was found in real results data
+(\texttt{PROB\_E\_003\_groq\_tot}) and fixed by updating the logic to
+recognise \texttt{\textbackslash dfrac} and \texttt{\textbackslash tfrac}
+as well.
+
+The second bug was about embedded ordinal numbers. The extraction logic
+searched for numbers in the response, but in a sentence like ``The 158th
+marble is \textbf{gray},'' the number 158 is just an ordinal reference,
+not the answer. The real answer, ``gray,'' is a word. Because the logic
+matched ``158'' before checking for words, the pipeline recorded ``158''
+as the answer instead of ``gray.'' This was found in real results data
+(\texttt{NT\_E\_009\_groq\_cot}) and fixed by ensuring the logic does not
+treat numbers with ordinal suffixes (like ``158th'') as standalone
+numeric answers.
+
+Regression tests (\texttt{tests/test\_response\_parser.py}) were added
+for both fixes, using the exact failing inputs described above. This
+way, if future changes to the extraction logic bring back either bug,
+the tests will catch them automatically instead of letting them slip by.
 
 \section{Reproducibility}
-% Point to the Appendix for the code listing / repository reference.
+
+The full source code for the experimental pipeline, analysis scripts,
+and statistical tests described in this dissertation is available at
+\url{https://github.com/AnushreeM2701/LLM_Project}. Selected,
+representative code listings -- including the answer evaluator and the
+statistical test implementations -- are reproduced in
+Appendix~\ref{app:code}. The full verbatim CoT and ToT prompt templates
+are given in Appendix~\ref{app:prompts}, and the complete dataset
+composition table is given in Appendix~\ref{app:dataset}.

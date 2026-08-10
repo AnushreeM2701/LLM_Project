@@ -1,60 +1,382 @@
 \chapter{Discussion and Conclusion}
 \label{chap:discussion}
 
-% YOU WRITE THIS CHAPTER. Blocked on Chapter~\ref{chap:results} being
-% finished first. This chapter needs YOUR critical interpretation more
-% than any other -- the argument (why the pattern looks the way it does,
-% what it means, where you'd push back on your own findings) must be in
-% your own voice.
+% TODO: this chapter needs critical interpretation more than any other --
+% the argument (why the pattern looks the way it does, what it means,
+% where the findings should be pushed back on) must be in the author's
+% own voice. Draft once Chapter~\ref{chap:results} is finalised.
 
-\section{Overview}
-% One paragraph: what this chapter does (interprets the RQ1-RQ3 results,
-% discusses validity threats, states conclusions and future work).
+% Opening paragraph(s) go here, unlabeled (no "Overview" heading -- see
+% Chapter~\ref{chap:introduction} for the convention used throughout this
+% dissertation). One paragraph: what this chapter does (interprets the
+% results of the three research questions, discusses validity threats,
+% states conclusions and future work).
 
-\section{Interpretation of RQ1 Findings}
-% What does the error-type distribution imply about each model's
-% mathematical reasoning weaknesses? Does it differ by model in a way
-% that's practically meaningful, not just statistically significant?
+\section{Interpretation of Error Type Findings}
 
-\section{Interpretation of RQ2 Findings}
-% Do errors cluster early or late in the reasoning chain? Does this differ
-% between CoT and ToT -- e.g. does ToT's selection step catch late errors
-% that CoT can't recover from?
+The most noticeable pattern in the error-type data is not how the models
+differ, but what they have in common. Combinatorial Counting Error is
+the most frequent error overall, making up 46 out of 136 incorrect
+responses (33.8\%) in the dataset. This is more than twice as many as
+the next most common category, Number Theory Error, which had 18
+responses (13.2\%). This shows that counting problems -- such as over-
+or under-counting, or confusing permutations with combinations -- are a
+shared structural weakness for Gemini, GPT-OSS-120B, and Mistral Large.
+It is not a problem unique to any one model or provider.
 
-\section{Interpretation of RQ3 Findings}
-% Does ToT help, and for which model(s) specifically? Reconcile with the
-% 4x generation cost noted in Section~\ref{sec:tot-design} -- is any
-% accuracy gain worth that cost?
+This shared weakness should be considered alongside the Chi-square test
+result in Section~\ref{sec:rq1} ($\chi^2 = 27.95$, $p = 0.111$), which
+does not show statistically significant evidence that the overall
+distribution of error types differs across models. Any model-specific
+patterns discussed below should be seen as descriptive observations, not
+statistically confirmed differences, especially given the small expected
+cell counts noted in that section.
+
+With that in mind, one descriptive pattern stands out. On the Hard-tier
+common-wrong-question set (Section~\ref{sec:hard-tier-freq}),
+GPT-OSS-120B's error profile under CoT is different from the other two
+models. Its most common error is Logical Reasoning Error, not
+Combinatorial Counting Error. Under ToT, this difference goes away, and
+all three models show Combinatorial Counting Error as their most
+frequent failure on the same question set. One possible explanation is
+that ToT's branch-and-select structure filters out some types of errors
+better than others. For example, a logical error in one branch can be
+avoided by choosing another branch. Still, a miscounting error that
+happens in all reasoning approaches cannot be fixed just by generating
+and selecting between multiple attempts. This suggests that
+counting-type errors are a deeper, more structural limitation, while
+logical-reasoning mistakes are more likely to be caught through
+reflection or resampling. However, this interpretation is speculative
+and is not directly tested by this study.
+
+\section{Interpretation of Step Count and Correctness Findings}
+
+The step-count pattern described in Section~\ref{sec:step-count} is one
+of the few areas where Mistral Large acts differently from the other two
+models, and this difference may be meaningful. As explained in
+Section~\ref{sec:models}, Gemini and GPT-OSS-120B both have an internal
+reasoning-effort control set to its lowest level and kept constant
+during this study. Mistral Large does not have this control and is used
+as a standard instruct model. As a result, Gemini's and GPT-OSS-120B's
+reasoning length is produced under a constant internal budget setting,
+while Mistral Large's reasoning length is free to vary as much as the
+model chooses on a given question.
+
+This difference helps explain why only Mistral Large shows a gap in step
+counts between correct and incorrect Hard-tier answers (mean 13.68 vs.
+16.17; median 8.0 vs. 12.5), while Gemini and GPT-OSS-120B do not. If a
+model's internal reasoning-effort setting is pinned low and held
+constant, its reasoning length may have little additional room to expand
+specifically on the questions it struggles with, so correct and
+incorrect answers end up costing a similar number of steps. Mistral
+Large, without this constraint, is free to generate a longer, more
+exploratory chain of steps precisely on the questions it finds
+difficult, and this extra effort does not appear to improve its accuracy
+-- if anything, it often takes more steps on the questions it gets wrong
+than on the ones it gets right.
+
+Another possible explanation is that some Hard-tier questions are more
+difficult than others. These harder questions might require more steps
+from any model and are more likely to be answered incorrectly. If this
+were the main reason, a similar step-count gap would be expected for
+Gemini and GPT-OSS-120B, since all three models faced the same 51
+Hard-tier questions. Since this gap does not appear for the other two
+models, the pure-difficulty explanation seems less convincing as the
+only cause. Still, it may play a role in how Mistral Large handles
+difficult questions. Like RQ2 itself, this is an interpretation of the
+data, not a proven cause.
+
+\section{Interpretation of CoT vs.\ ToT Findings}
+
+Section~\ref{sec:overall-accuracy} (CoT vs. ToT) shows that ToT improves
+accuracy significantly for two models, GPT-OSS-120B and Mistral Large,
+but not for Gemini. Section~\ref{sec:pipeline} explains that ToT
+requires about four times as many generation calls as CoT, and
+Section~\ref{sec:execution-time} shows the practical result: mean execution
+time increases by 2.50x for Gemini, 4.56x for GPT-OSS-120B, and 3.01x
+for Mistral Large. Whether this extra cost is justified depends on the
+model, and the answer is different for each one.
+
+For GPT-OSS-120B and Mistral Large, ToT is a strong option. Both models
+show a clear accuracy improvement in the Hard tier, where improvement is
+needed (Section~\ref{sec:overall-accuracy}), and the gain is large --
+15.6 percentage points for each model in this tier. GPT-OSS-120B has the
+biggest relative cost increase (4.56x, close to the expected 4x). Still,
+it is also the model with a significant McNemar result, which suggests
+that the extra computation leads to a real benefit.
+
+For Gemini, the case is weaker. Its Hard-tier accuracy does rise
+numerically under ToT (51.0\% to 56.9\%), and its Medium-tier accuracy
+actually falls slightly (100.0\% to 97.5\%). Still, neither change is
+distinguishable from chance given only 10 discordant pairs
+(Section~\ref{sec:overall-accuracy}). Gemini still pays a 2.50x
+execution-time cost for ToT, without a demonstrated accuracy benefit to
+offset it. It is worth being precise about what this non-significant
+result does and does not show: it does not prove that ToT has no effect
+on Gemini, only that this study's sample size cannot distinguish a real
+but modest effect from no effect at all. A larger sample of discordant
+pairs might yet disclose a significant difference in either direction.
+
+Overall, these results do not give a single answer to whether ToT is
+worth its cost. For two of the three models, ToT gives a clear and
+meaningful accuracy boost that likely justifies its 3--4.5x cost. For
+the third model, the cost is paid without a proven benefit, but this
+could be because the study did not have enough data to detect an effect.
+For any new model, this question should be tested directly, just as it
+was here.
 
 \section{Threats to Validity}
-% Expand docs/limitations.md here with discussion, not just a list:
-% reasoning-effort confound, data contamination, judge conflict of
-% interest (tie directly to the incomplete neutral-validation result),
-% fixed ToT branch count, small subgroup Ns.
+\label{sec:threats-validity}
+
+Section~\ref{sec:limitations} presents the main methodological
+limitations of this study. This section explains how each limitation
+affects the conclusions in Chapter~\ref{chap:results}, instead of
+repeating the list.
+
+The \textbf{reasoning-effort confound} is most important for RQ3.
+GPT-OSS-120B's reasoning-effort setting is set to low, not zero, and the
+model is designed to reason, so some internal reasoning may still happen
+even without explicit CoT/ToT prompts. If GPT-OSS-120B does more internal
+reasoning at low effort than Gemini does at its ``minimal'' thinking
+level, this difference -- not just the prompting structure -- could help
+explain why GPT-OSS-120B shows a significant ToT improvement while
+Gemini does not (Section~\ref{sec:overall-accuracy}). This study cannot
+separate these two explanations, because the internal reasoning budget
+was only kept constant within each model's own CoT/ToT comparison, not
+matched across models.
+
+\textbf{Data contamination risk} threatens a more basic assumption: that
+accuracy differences show reasoning ability, not just memorised training
+data. This matters for the near-perfect Easy/Medium accuracy in
+Section~\ref{sec:overall-accuracy} (95--100\% for every model and
+prompting strategy). Another possible reason for this ceiling effect is
+that Hendrycks MATH, a common public benchmark, is likely included in
+the pretraining data for all three models. High accuracy may therefore
+reflect recall instead of real problem-solving. This study cannot tell
+these explanations apart, which is why the Hard tier, based on the
+less-republished AIME, is more important for analysis in this
+dissertation.
+
+\textbf{Judge conflict of interest} threatens RQ1 specifically: Gemini
+is both a model under evaluation and the model classifying every
+incorrect response's error type. The planned mitigation, an independent
+sample re-judged by a neutral model with agreement measured by Cohen's
+kappa, was not completed (Section~\ref{sec:judging}), so this bias is
+neither confirmed nor ruled out. Some RQ1 findings are more exposed to
+this risk than others: a claim that Gemini's own errors are classified
+differently from the other two models' errors would be directly
+vulnerable to judge leniency, whereas the shared-weakness finding
+discussed in Section~\ref{chap:discussion} (Combinatorial Counting Error
+dominant across all three models, including the two Gemini has no
+evaluative stake in) is comparatively less exposed, since a bias
+favourable to Gemini specifically could not manufacture a pattern shared
+by all three models' outputs.
+
+The \textbf{fixed Tree-of-Thought branch count} of three limits how much
+the RQ3 conclusions can be generalised. The finding that ToT
+significantly improves accuracy for two of the three models only applies
+to this study's three-branch setup, not to tree-search-based prompting
+in general. Using a different branch count could lead to different
+results for any model.
+
+Finally, \textbf{small subgroup sample sizes} limit how much confidence
+can be placed in the more detailed breakdowns in this dissertation. The
+Hard tier's category counts range from 8 (Probability) to 16 (Algebra
+and Combinatorics), and RQ1's Chi-square test was flagged for a low
+minimum expected cell count of 0.265. Claims at the category level or
+for each model in each category should be seen as descriptive, not
+statistically confirmed, as already noted in Sections~\ref{sec:rq1}
+and~\ref{sec:limitations}.
 
 \section{Comparison with Prior Work}
-% Relate RQ1-RQ3 findings back to Chapter~\ref{chap:literature}.
+
+Sun et al.~\cite{sun2025errorclassification} and Zhang and
+Graf~\cite{zhang2025mathematical} both classify LLM mathematical
+reasoning errors within individual models. By comparing the same error
+taxonomy across three models, this dissertation finds something those
+single-model studies could not: the largest error category, Combinatorial
+Counting Error, appears in all three models, not just one. The
+Chi-square test also shows no statistically significant difference in
+error-type distribution between models (Section~\ref{sec:rq1}). While
+Sun et al. and Zhang and Graf show that error type and location are
+measurable and informative, this dissertation adds that at least one
+property, the dominant error type, may be common across models rather
+than unique to each.
+
+Section~\ref{sec:tot-scope} explains that the Tree-of-Thought method
+tested here is a smaller-scale version of what Yao et
+al.~\cite{yao2023tree} describe. Instead of a deep, iterative search,
+this study uses three independently generated candidates and one
+selection step. The RQ3 result -- that this simpler approach improves
+accuracy for two models but not Gemini -- applies only to this limited
+version, not to all tree-search-based prompting. It is still unclear
+whether the full iterative search from Yao et al. would help Gemini or
+further benefit the other models. Wang et al.'s Self-Consistency
+\cite{wang2023selfconsistency}, which combines independently sampled CoT
+paths by majority vote, gives a similar warning: more reasoning does not
+always mean more reliable answers if the same error appears in each
+sample. The RQ2 finding here, that Mistral Large's longer,
+less-constrained reasoning on the Hard tier does not lead to higher
+accuracy, supports this warning, even though the two studies use
+different methods.
+
+Finally, Hao et al.~\cite{hao2024autorace} point out the risk of
+self-evaluation bias when an LLM judges its own or similar models'
+outputs. This dissertation faces that risk directly, since Gemini is
+both being evaluated and is the main error-classification judge.
+Section~\ref{sec:threats-validity} looks at how this risk affects the
+RQ1 results in more detail. The key point here is that this dissertation
+tried to reduce the risk in the way Hao et al. suggest -- by using an
+independent, neutral judge for validation -- though this was not done at
+the planned scale (Section~\ref{sec:judging}).
 
 \section{Summary of Findings}
-% One paragraph per RQ, stated plainly -- this is often lifted almost
-% directly into the Abstract once written.
+\label{sec:summary-findings}
 
-\section{Contributions}
-% Chapter 1 has no separate Contributions section, so this is where they're
-% stated for the first time, not revisited. What's actually novel/useful:
-% paired CoT/ToT design across 3 models, real multi-branch ToT (not
-% single-call), 11-category error taxonomy + free-text subtype,
-% appropriate statistical testing per RQ (chi-square, Kruskal-Wallis,
-% McNemar rather than raw percentages).
+RQ1 looked at whether the types of mathematical reasoning errors varied
+between the three models. The most common error, Combinatorial Counting
+Error, appeared in all three models -- Gemini, GPT-OSS-120B, and Mistral
+Large -- so it was not unique to any one of them. A Chi-square test
+showed no significant difference in how error types were distributed
+across the models. There was a shift in the Hard-tier
+common-wrong-question set: for GPT-OSS-120B, Logical Reasoning Error was
+most common under CoT, but this changed under ToT, where all three
+models showed the same main error type.
+
+RQ2 explored whether the number of reasoning steps a model takes is
+related to whether its answer is correct. For Gemini and GPT-OSS-120B,
+there was no clear link on the Hard tier -- both correct and incorrect
+answers used about the same number of steps. For Mistral Large, however,
+incorrect answers on the Hard tier used more steps than correct ones
+(mean 16.17 vs. 13.68; median 12.5 vs. 8.0). This may be because Mistral
+Large does not have a way to limit its reasoning length, unlike the
+other two models.
+
+RQ3 looked at whether Tree-of-Thought (ToT) prompting leads to better
+answers than Chain-of-Thought (CoT) for each model. McNemar's Exact Test
+showed that ToT gave a significant improvement for GPT-OSS-120B
+($p = 0.021$) and Mistral Large ($p = 0.008$), but not for Gemini
+($p = 0.754$). The improvement was mainly seen in the Hard tier, where
+there was more room to get better results. For Easy and Medium
+questions, accuracy was already very high for all models. Therefore, ToT
+is not equally helpful for every model, and its much longer execution
+time is only worth it when there is a clear accuracy gain.
 
 \section{Future Work}
-% Candidates already identified during this project: deeper ToT search
-% (branch count beyond 3), the pending human-vs-automatic grading
-% validation sample, completing the neutral-judge validation given more
-% time, extending beyond non-reasoning-native models to directly test the
-% reasoning-effort confound this study controlled for but did not
-% eliminate, a larger/rebalanced Hard-tier category sample.
+
+Several directions for future work follow directly from the limitations
+discussed in Section~\ref{sec:threats-validity}.
+
+The Tree-of-Thought implementation in this study used a fixed branch
+count of three, chosen for scope rather than tested against alternatives
+(Section~\ref{sec:threats-validity}). A natural extension is to test a
+range of branch counts to establish whether the significant accuracy
+gains seen for GPT-OSS-120B and Mistral Large continue to grow with more
+branches, plateau, or whether a larger branch count could close the gap
+for Gemini, where no significant gain was found at three branches.
+
+The planned neutral-judge validation was not completed at the intended
+scale of 120 responses due to the neutral judge provider's daily token
+quota (Section~\ref{sec:judging}). Completing this validation with more
+time or a higher-quota provider would directly address the judge
+conflict of interest discussed in Section~\ref{sec:threats-validity},
+and would clarify whether Gemini's dual role as both evaluated model and
+judge introduces a measurable bias in the RQ1 error-type findings.
+
+Similarly, the planned manual grading validation of the automatic answer
+evaluator against human judgment, covering a sample of real model
+outputs rather than only hand-picked test cases, was not carried out
+(Section~\ref{sec:limitations}). This would strengthen confidence in the
+answer-correctness labels underlying every result in this dissertation.
+
+This study evaluated three free-tier models, none of which are dedicated
+frontier reasoning models with reasoning always on. Extending this
+study's design to such models would directly test the reasoning-effort
+confound discussed in Section~\ref{sec:threats-validity}, since a model
+without a low-effort setting to pin would remove one source of
+uncertainty in interpreting the RQ3 results.
+
+The Hard tier's AIME-only category counts are unbalanced (Algebra 16,
+Combinatorics 16, Number Theory 11, Probability 8), limiting the
+statistical power of category-level comparisons
+(Section~\ref{sec:threats-validity}). A larger, rebalanced Hard-tier
+sample, curated and categorised beyond what was available for this
+project, would allow category-level claims to be tested with confidence
+rather than treated as descriptive.
+
+This dissertation's RQ2 was limited to a descriptive analysis, so no
+formal significance test was used for the step-count-versus-correctness
+comparison (Section~\ref{sec:step-count}). An appropriate next step
+would be to test this relationship formally. For example, a
+Mann-Whitney U test could compare the step-count distributions of
+correct and incorrect responses for Mistral Large, to see if the
+observed gap (Section~\ref{sec:summary-findings}) is statistically
+significant rather than just descriptively interesting.
+
+The Tree-of-Thought design used here creates three candidates
+independently and then picks one in a single round. This is different
+from the deeper, step-by-step evaluation and pruning described by Yao et
+al.~\cite{yao2023tree} (Section~\ref{sec:tot-scope}). Implementing this
+more thorough iterative search, and also comparing it to Wang et al.'s
+Self-Consistency~\cite{wang2023selfconsistency} (which uses independent
+sampling and majority voting, but is simpler to engineer than
+branch-and-select ToT), could help show whether ToT's advantage comes
+from evaluating and choosing between branches, or just from making
+multiple attempts at a problem.
+
+Combinatorial Counting Error is the biggest error category found in all
+three models (Section~\ref{sec:rq1}). A follow-up study could create a
+smaller, targeted diagnostic set to focus on specific counting
+sub-skills, for example choosing between permutations and combinations,
+using inclusion-exclusion, and spotting over- or under-counting from
+double-counted cases. This would help identify which sub-skill causes
+this shared weakness, instead of treating ``combinatorial counting'' as
+one broad category.
+
+Finally, the results of this study depend on specific model versions at
+a certain point in time (Section~\ref{sec:models}). Model names like
+\texttt{gemini-flash-lite-latest} and \texttt{mistral-large-latest} can
+point to different models if the study is repeated later. Repeating this
+research with newer model versions would show whether the patterns found
+here -- especially the shared Combinatorial Counting Error weakness and
+the model-dependent ToT benefit -- continue as models improve or are
+unique to this generation.
 
 \section{Conclusion}
-% Short closing paragraph -- what was set out to be answered, and the
-% headline answer, in plain language.
+
+This dissertation aimed to go beyond just measuring accuracy when
+evaluating mathematical reasoning in Large Language Models. It explored
+what types of errors three models make, whether longer reasoning leads
+to more correct answers, and whether Tree-of-Thought prompting actually
+improves results compared to Chain-of-Thought. The answers to these
+questions are not straightforward. Gemini, GPT-OSS-120B, and Mistral
+Large all share the main weakness of Combinatorial Counting Error,
+suggesting this is a common limitation in current mathematical reasoning
+methods, not just a problem with one provider. For two of the three
+models, longer reasoning does not mean more reliable answers. For
+Mistral Large, the exception, incorrect answers actually involve more
+reasoning steps than correct ones -- extra effort does not translate
+into a better outcome, which may be because the model cannot control how
+long its reasoning is. Tree-of-Thought prompting improves accuracy for
+two of the three models, but this comes with a considerable
+computational cost. For the third model, the same effort does not lead
+to any clear benefit.
+
+Overall, these results show that LLM mathematical reasoning should not
+be seen as a single, uniform skill that reacts the same way to every
+prompting strategy. For people considering Tree-of-Thought prompting in
+a mathematical reasoning task, the data show that its effectiveness
+depends on the specific model and should be tested directly, not assumed
+based on results from other models. It is important to evaluate each new
+model or prompting method on its own, instead of expecting patterns from
+previous studies always to apply.
+
+This study took place at a specific time, using three free-tier models
+tested with a curated set of 131 questions. Some parts of the analysis,
+such as the neutral-judge validation and the RQ2 significance test, were
+only described or left unfinished because of the practical limits of an
+MSc dissertation, as explained in Section~\ref{sec:threats-validity}.
+Even with these limits, the main conclusion remains: looking only at
+accuracy would have missed the shared error pattern, the link between
+step count and correctness for each model, and the model-specific
+effects of Tree-of-Thought prompting that this deeper analysis showed.

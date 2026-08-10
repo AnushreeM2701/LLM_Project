@@ -1,105 +1,103 @@
 \chapter{Introduction}
 \label{chap:introduction}
 
-% YOU WRITE THIS CHAPTER. Notes below are structure/content pointers only,
-% not sentences to copy. Ask me to explain any of these before you write
-% about them.
-
 \section{Overview}
 
-Large Language Models (LLMs) have become increasingly capable of solving
-complex reasoning tasks, including mathematical problem solving, making
-them valuable for applications such as intelligent tutoring systems,
-educational technologies, and decision-support tools. As these models are
-increasingly used in domains that require reliable multi-step reasoning,
-understanding not only their final performance but also the reasoning
-process leading to their answers has become an important area of research.
+Large Language Models (LLMs) have demonstrated the capability to solve
+complex problems~\cite{brown2020fewshot, chowdhery2022palm}, including
+mathematical tasks, which makes them valuable
+for intelligent tutoring systems, educational technology, and
+decision-support tools. As the application of these models expands into
+domains requiring reliable multi-step reasoning, it is increasingly
+important to evaluate both their final performance and the reasoning
+processes employed to reach their conclusions.
 
-This dissertation investigates the mathematical reasoning performance of
-three Large Language Models---Gemini Flash Lite, GPT-OSS-120B, and Mistral
-Large---using two reasoning-based prompting strategies: Chain-of-Thought
-(CoT) and Tree-of-Thought (ToT). The study evaluates model performance on a
-curated dataset of mathematical problems drawn from the Hendrycks MATH
-dataset and selected American Invitational Mathematics Examination (AIME)
-questions. Beyond measuring answer correctness, the research analyses the
-types of mathematical reasoning errors produced by each model, identifies
-where within the reasoning process these errors occur, and compares the
-effectiveness and computational cost of the two prompting strategies.
+This dissertation investigates the mathematical reasoning abilities and
+error patterns of three Large Language Models: Gemini Flash Lite
+(\texttt{gemini-3.5-flash-lite}) accessed via Google, GPT-OSS-120B
+(\texttt{openai/gpt-oss-120b}) accessed via Groq, and Mistral Large
+(\texttt{mistral-large-latest}, which corresponded to Mistral Large 3,
+\texttt{mistral-large-2512}, during this project) accessed via Mistral.
+Each model was evaluated using two reasoning-based prompting strategies,
+Chain-of-Thought (CoT)~\cite{wei2022chain} and Tree-of-Thought
+(ToT)~\cite{yao2023tree}, on a common set of 131 mathematics problems
+spanning Algebra, Number Theory, Probability, and Combinatorics. The Easy
+and Medium problems were sourced from the Hendrycks MATH
+dataset~\cite{hendrycks2021measuring}, corresponding to Hendrycks Levels
+1--2 and 3--4, while the Hard problems were drawn from the American
+Invitational Mathematics Examination (AIME)~\cite{maa_aime}. Administering
+all 131 questions with both strategies for each model yielded 786
+responses. In addition to evaluating answer correctness, the study
+analyses the types of reasoning errors exhibited by each model, the
+relationship between step count and answer correctness, and the
+computational time required for each strategy.
 
 This chapter introduces the research by presenting the motivation for the
-study, defining the research problem, outlining the research questions and
-objectives, and summarising the main contributions of the dissertation. It
-concludes with an overview of the remaining chapters, providing the
-context for the methodology, experimental evaluation, statistical
-analysis, and discussion presented throughout the dissertation.
+study, defining the research problem, and outlining the research questions
+and objectives. It concludes with a summary of the subsequent chapters,
+which detail the methodology, experimental procedures, statistical
+analyses, and discussion provided in the remainder of the dissertation.
 
 \section{Motivation}
 
-Large Language Models (LLMs) have become increasingly capable of solving
-complex reasoning tasks and are now widely used in applications such as
-intelligent tutoring systems, educational technologies, and
-decision-support tools. As these models continue to be integrated into
-domains that require reliable mathematical reasoning, understanding the
-quality of their reasoning process has become increasingly important.
-Mathematical problem solving differs from many other natural language
-tasks because it requires logically consistent multi-step reasoning, where
-an error in an intermediate step can invalidate the entire solution.
-Consequently, evaluating the reasoning capabilities of LLMs is essential
-for assessing their reliability and suitability for real-world
-applications.
+As Large Language Models are used more often in areas that require
+reliable multi-step reasoning, such as intelligent tutoring systems and
+automated decision-support tools, the way they reach an answer matters as
+much as whether the answer is correct. Solving mathematical problems is a
+demanding test of this reasoning. Unlike other language tasks, mathematics
+requires each step to be logically sound, since a mistake at any point can
+invalidate the whole solution. Because of this, it is important to examine
+how LLMs reason, not just whether they arrive at the right answer, in
+order to judge whether they are reliable and suitable for real-world use.
 
-The growing use of reasoning-based prompting techniques has created new
-opportunities to improve the mathematical performance of LLMs.
-Chain-of-Thought (CoT) prompting encourages models to generate intermediate
-reasoning steps, while Tree-of-Thought (ToT) prompting extends this process
-by exploring multiple reasoning paths before selecting a final solution. As
-these prompting strategies become increasingly popular, it is important to
-understand not only whether they improve answer accuracy but also how they
-influence reasoning behaviour, execution time, and mathematical
-problem-solving performance. This motivates the need for a systematic
-evaluation of different Large Language Models across diverse mathematical
-problems using structured prompting strategies.
+Reasoning-based prompting methods are now commonly used to help LLMs solve
+mathematical problems more effectively. Chain-of-Thought (CoT)
+prompting~\cite{wei2022chain} encourages models to show their reasoning
+steps, while Tree-of-Thought (ToT) prompting~\cite{yao2023tree} allows
+them to explore different approaches before selecting the most suitable
+solution. As these techniques become more popular, it is important to
+examine not only whether they improve accuracy, but also how they affect
+reasoning quality, execution time, and overall mathematical performance.
+This highlights the need to systematically evaluate different LLMs on a
+range of mathematical problems using these structured prompting
+strategies.
 
 \section{Problem Statement}
 
-Large Language Models (LLMs) have demonstrated strong performance on
-mathematical reasoning benchmarks, with most existing studies evaluating
-their capabilities using overall answer accuracy. Although accuracy is an
-important performance indicator, it provides only a high-level measure of
-model performance and offers limited insight into the reasoning process
-that leads to a solution. As a result, existing evaluations often fail to
-explain the nature of reasoning failures, the stage at which errors occur,
-or how different prompting strategies influence mathematical reasoning
-behaviour.
+Large Language Models (LLMs) have shown strong results on mathematical
+reasoning benchmarks~\cite{hendrycks2021measuring}, and most studies
+measure their abilities by looking at overall answer accuracy. While
+accuracy is important, it only gives a broad view of how well a model
+works and does not reveal much about the reasoning process behind each
+solution. Because of this, current evaluations often do not explain what
+kinds of reasoning failures happen, when errors occur, or how different
+prompting strategies affect mathematical reasoning.
 
-Furthermore, while reasoning-based prompting techniques such as
-Chain-of-Thought (CoT) and Tree-of-Thought (ToT) have been widely adopted
-to improve mathematical reasoning, many studies compare these approaches
-using descriptive accuracy metrics alone. Such comparisons provide limited
-evidence regarding whether observed differences in performance are
-statistically meaningful. In addition, there is relatively little work
-that simultaneously analyses reasoning error types, identifies where
-errors occur within the reasoning process, and evaluates the effectiveness
-of prompting strategies across multiple Large Language Models using a
-controlled experimental design.
+Reasoning-based prompting methods such as Chain-of-Thought
+(CoT)~\cite{wei2022chain} and Tree-of-Thought (ToT)~\cite{yao2023tree} are
+now widely used to improve mathematical reasoning. However, simply
+comparing their raw accuracy percentages is not enough. Since both
+strategies are usually tested on the same questions for a given model, the
+results are paired, not independent. This means that any difference in
+accuracy needs to be tested for statistical significance. Also, looking
+only at final-answer accuracy does not show what types of reasoning errors
+the model makes or when those errors first appear.
 
-To address these limitations, this dissertation presents a systematic
-study of mathematical reasoning in Large Language Models using a curated
-dataset of mathematical problems covering multiple domains and difficulty
-levels. Three Large Language Models are evaluated using both
-Chain-of-Thought and Tree-of-Thought prompting strategies. In addition to
-measuring answer correctness, the study analyses reasoning error types,
-error locations, execution time, and model performance, followed by
-appropriate statistical analyses to compare the behaviour of different
-models and prompting strategies. By moving beyond aggregate accuracy, this
-research aims to provide a more comprehensive understanding of the
-reasoning capabilities and limitations of contemporary Large Language
-Models.
+To address these issues, this dissertation presents a systematic study of
+mathematical reasoning in Large Language Models using a curated set of
+mathematical problems from different domains and difficulty levels. Three
+LLMs are tested with both Chain-of-Thought and Tree-of-Thought prompting.
+The study measures answer correctness, types and locations of reasoning
+errors, execution time, and overall model performance. It also uses
+statistical analysis to compare how different models and prompting
+strategies behave. By looking beyond just accuracy, this research aims to
+give a fuller picture of the reasoning strengths and weaknesses of today's
+Large Language Models.
 
 \section{Research Questions}
 
-This dissertation investigates the mathematical reasoning capabilities of
-Large Language Models by addressing the following research questions.
+This dissertation examines how well Large Language Models handle
+mathematical reasoning by exploring the following research questions.
 
 \textbf{RQ1:} What are the most common types of mathematical reasoning
 errors made by Large Language Models, and does the distribution of error
@@ -108,80 +106,75 @@ types differ across models?
 This research question examines whether different Large Language Models
 exhibit distinct patterns of mathematical reasoning errors. Since both the
 evaluated model and the error type are categorical variables, the study
-employs the Chi-square test of independence to determine whether the
-observed distribution of error categories differs significantly across
+uses the Chi-square test of independence to determine whether the
+recorded distribution of error categories differs significantly across
 models. Where expected cell frequencies are small, the results are
 interpreted with caution because the Chi-square approximation becomes less
 reliable. The assumptions and limitations of the Chi-square test,
-including the presence of small expected cell counts in this study, are
+including the existence of small expected cell counts in this study, are
 discussed further in the Methodology chapter.
 
-\textbf{RQ2:} At what stage of the reasoning process do mathematical
-reasoning errors first occur, and does this differ across models or
-prompting strategies?
+\textbf{RQ2:} Is there a descriptive relationship between step count and
+answer correctness, and does this pattern differ across models?
 
-This research question investigates whether different models or prompting
-strategies tend to fail earlier or later during the reasoning process. The
-analysis compares the relative position of the first reasoning error
-within generated solutions. As the error-position measurements are not
-assumed to follow a normal distribution, the Kruskal--Wallis test is
-employed to compare error locations across multiple independent groups.
+This question explores whether longer or shorter reasoning chains tend to
+accompany correct or incorrect answers. The analysis compares the mean
+and median number of solution steps between correct and incorrect
+responses for each model and difficulty tier. This comparison is
+descriptive: no formal significance test is applied to the step-count
+data, so any observed differences are reported as patterns rather than
+statistically confirmed effects.
 
 \textbf{RQ3:} Does Tree-of-Thought prompting significantly improve
-mathematical reasoning performance compared with Chain-of-Thought
-prompting for each Large Language Model?
+mathematical reasoning performance versus Chain-of-Thought prompting for
+each Large Language Model?
 
-This research question evaluates whether Tree-of-Thought (ToT) prompting
-produces significantly different answer correctness compared with
-Chain-of-Thought (CoT) prompting. Since every mathematical problem is
-solved using both prompting strategies for the same model, the
-observations are paired rather than independent. Therefore, McNemar's
-Exact Test is employed to compare the two prompting strategies while
-accounting for the paired experimental design.
+This question examines whether Tree-of-Thought (ToT) prompting leads to
+different answer correctness compared to Chain-of-Thought (CoT) prompting.
+Each mathematical problem is solved using both strategies for the same
+model, so the observations are paired. Because of this, McNemar's Exact
+Test is used to compare the two prompting strategies, taking the paired
+design into account.
 
-Together, these research questions investigate complementary aspects of
-mathematical reasoning in Large Language Models. RQ1 analyses the types of
-reasoning errors produced by different models, RQ2 examines where
-reasoning failures occur within the solution process, and RQ3 evaluates
-the effectiveness of two reasoning-based prompting strategies.
-Collectively, these questions provide a comprehensive assessment of
-mathematical reasoning that extends beyond conventional accuracy-based
-evaluations.
+Together, these research questions look at different aspects of
+mathematical reasoning in Large Language Models. RQ1 studies the types of
+reasoning errors made by different models. RQ2 examines the descriptive
+relationship between step count and answer correctness. RQ3 compares the
+effectiveness of two prompting strategies. Collectively, these questions
+provide a thorough assessment of mathematical reasoning that goes beyond
+just measuring accuracy.
 
 \section{Thesis Outline}
 
-The remainder of this dissertation is organised as follows.
+The rest of this dissertation is structured as follows.
 
-\textbf{Chapter 2 -- Literature Review} reviews the existing literature on
-Large Language Models (LLMs) and mathematical reasoning. It discusses
+\textbf{Chapter 2 -- Literature Review} reviews the current literature on
+Large Language Models (LLMs) and mathematical reasoning. It covers
 Chain-of-Thought (CoT) and Tree-of-Thought (ToT) prompting strategies,
-benchmark datasets including Hendrycks MATH and the American Invitational
-Mathematics Examination (AIME), and recent approaches to automated
-evaluation using LLM-as-a-Judge methodologies.
+reference datasets such as Hendrycks MATH and the American Invitational
+Mathematics Examination (AIME), and recent methods for automated
+evaluation using LLM-as-a-Judge approaches.
 
-\textbf{Chapter 3 -- Statistical Methodology} presents the research
-methodology adopted in this study. It describes the dataset construction
-process, model selection, Tree-of-Thought implementation, answer
-evaluation pipeline, error classification framework, and the statistical
-methods used to address each of the research questions.
+\textbf{Chapter 3 -- Statistical Methodology} explains the research
+methods used in this study. It describes how the dataset was built, how
+models were chosen, how Tree-of-Thought was implemented, the answer
+evaluation process, the error classification system, and the statistical
+methods used to answer each research question.
 
-\textbf{Chapter 4 -- Application and Case Study} describes the
-implementation of the experimental pipeline used to evaluate the
-finalised dataset. It provides a detailed walkthrough of the evaluation
-dataset, explains the collection of 786 model responses across different
-models and prompting strategies, and describes the data quality assurance
-procedures applied to ensure the reliability and consistency of the
-experimental results.
+\textbf{Chapter 4 -- Application and Case Study} describes how the
+experimental pipeline was used to evaluate the final dataset. It reviews
+the evaluation dataset in detail, explains how 786 model responses were
+collected across different models and prompting strategies, and outlines
+the steps taken to ensure the reliability and consistency of the results.
 
-\textbf{Chapter 5 -- Results} presents the experimental findings and
-statistical analyses. The chapter reports the results for each research
-question, compares model performance under Chain-of-Thought and
-Tree-of-Thought prompting, and presents analyses of execution time,
-answer correctness, reasoning errors, and other evaluation metrics.
+\textbf{Chapter 5 -- Results} presents the experimental results and
+statistical analyses. It reports findings for each research question,
+compares how models perform with Chain-of-Thought and Tree-of-Thought
+prompting, and analyses execution time, answer correctness, reasoning
+errors, and other evaluation measures.
 
-\textbf{Chapter 6 -- Discussion and Conclusion} interprets the
-experimental findings in relation to the research questions and existing
-literature. It discusses the limitations of the study, highlights its key
-contributions, provides recommendations for future research, and
-concludes the dissertation by summarising the overall findings and their
-implications.
+\textbf{Chapter 6 -- Discussion and Conclusion} discusses the study's
+findings in relation to the research questions and existing literature.
+It covers the study's limitations, highlights its main contributions,
+offers suggestions for future research, and ends by summarising the
+overall results and their implications.

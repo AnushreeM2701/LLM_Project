@@ -1,59 +1,416 @@
 \chapter{Statistical Methodology}
 \label{chap:methodology}
 
-% YOU WRITE THIS CHAPTER. This is the mathematical/statistical detail
-% chapter your outline calls for -- ask me to explain the mechanics of any
-% test below (assumptions, what the null hypothesis is, why it's the right
-% test for that RQ) before you write it up.
+% TODO: for each statistical test below, confirm assumptions, null
+% hypothesis, and justification for that RQ before finalising.
 
-\section{Overview}
-% One short paragraph: what this chapter covers and how it's organised.
+This chapter explains the methods used in this study. It describes how
+the evaluation dataset was built, which Large Language Models were chosen
+and why, how the Chain-of-Thought and Tree-of-Thought prompting
+strategies were designed, how answer correctness was judged, which
+statistical tests were used for each research question, how the
+error-judging process was set up, and the limitations of these methods.
 
 \section{Dataset Construction}
 \label{sec:dataset}
-% Composition table (Category x Difficulty), source of each tier
-% (Hendrycks Easy/Medium, AIME Hard), why Hard is AIME-only (ask me for
-% the accuracy-gap evidence that justified this), why category counts
-% are unbalanced in Hard and how that's handled (covariate, not trimming).
+
+The evaluation dataset includes 131 mathematical problems, grouped into
+three difficulty levels (Easy, Medium, Hard) and four categories: Algebra,
+Number Theory, Probability, and Combinatorics. Table~\ref{tab:composition}
+lists the exact breakdown.
+
+\begin{table}[h]
+  \centering
+  \caption{Dataset composition by category and difficulty level.}
+  \label{tab:composition}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Category & Easy & Medium & Hard (AIME) & Total \\
+    \midrule
+    Algebra          & 10 & 10 & 16 & 36 \\
+    Number Theory    & 10 & 10 & 11 & 31 \\
+    Probability      & 10 & 10 & 8  & 28 \\
+    Combinatorics    & 10 & 10 & 16 & 36 \\
+    \midrule
+    \textbf{Total}   & \textbf{40} & \textbf{40} & \textbf{51} & \textbf{131} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The Easy and Medium levels come from Hendrycks MATH, with exactly 10
+questions per category in each level (using seed 25116096). These match
+Hendrycks Levels 1--2 for Easy and Levels 3--4 for Medium. The Hard level
+uses only questions from AIME.
+
+The choice to use only AIME questions for the Hard level, instead of also
+including Hendrycks MATH Level 5, was based on pilot testing. Earlier,
+both AIME and Hendrycks Level-5 questions were included, but pilot
+results showed about an 80 percentage point difference in accuracy
+between them under the same models and prompts. This suggested the two
+sources were not measuring the same thing, even though they had the same
+difficulty label, so only AIME questions were kept for the Hard level.
+
+The number of questions in each Hard-level category is intentionally
+uneven. Probability is limited to 8 questions because that is all the
+AIME Probability questions available and labelled for this project. The
+other three categories were not reduced to match. Reducing them would
+have meant losing useful data without any real benefit, so the imbalance
+is handled as a covariate in the analysis instead of forcing equal
+numbers.
 
 \section{Models}
-% Which 3 models, why non-reasoning-native matters for RQ3 specifically
-% (ask me to explain the confound this avoids), what's held constant
-% across CoT/ToT and why.
+\label{sec:models}
+
+Three Large Language Models are evaluated in this study: Gemini Flash
+Lite (\texttt{gemini-flash-lite-latest}, resolving to
+\texttt{gemini-3.5-flash-lite}), GPT-OSS-120B (\texttt{openai/gpt-oss-120b},
+via Groq), and Mistral Large (\texttt{mistral-large-latest}, resolving to
+Mistral Large 3, \texttt{mistral-large-2512}). All three are free-tier
+models accessed through their respective providers' APIs.
+
+Gemini was fixed as one of the three models per a supervisor requirement.
+Groq and Mistral's specific models were selected after an earlier review
+found that the originally planned Llama-3.3-70B (Groq) and Mistral Small
+performed poorly on AIME-level problems, and after confirming that
+Llama-4-Maverick/Scout -- the originally planned replacement on Groq --
+had been deprecated by Groq. GPT-OSS-120B was selected as Groq's own
+recommended migration target for the deprecated models.
+
+Every model is run with temperature set to 0, so responses are
+deterministic given the same prompt. Two of the three models -- Gemini
+and GPT-OSS-120B -- expose an internal ``thinking effort'' or ``reasoning
+effort'' control; both are pinned to their lowest available setting
+(Gemini: \texttt{thinking\_level = "minimal"}; GPT-OSS-120B:
+\texttt{reasoning\_effort = "low"}) and held constant across both
+Chain-of-Thought and Tree-of-Thought conditions. This matters
+specifically for RQ3: if this setting were left to vary, a difference in
+accuracy between CoT and ToT could reflect a changing internal reasoning
+budget rather than the prompting strategy itself. Pinning it to a fixed,
+minimum value is a controlled confound, not an eliminated one -- it does
+not guarantee zero internal reasoning is happening regardless of the
+prompt, only that whatever internal reasoning occurs is held constant
+across conditions. Mistral Large has no equivalent control exposed and is
+used as a standard instruct model throughout.
 
 \section{Prompting Strategies}
+\label{sec:prompting}
 \subsection{Chain-of-Thought}
+
+In the Chain-of-Thought setup, the model answers each question with just
+one call. It receives the problem and is told to explain its reasoning
+step by step, finishing with a final answer in a set format.
+
+This is the usual single-pass Chain-of-Thought design: one call produces
+one reasoning process and one final answer, all generated at temperature
+0 to keep results consistent. The prompt template itself (the full
+verbatim text is given in Appendix~\ref{app:prompts}) fixes the output
+format so that every response, regardless of model, can be parsed the
+same way:
+
+\begin{quote}
+\ttfamily\small
+Solve the following mathematics problem.\\
+\\
+Show your reasoning as clear, numbered steps.\\
+\\
+Format your response exactly as:\\
+\\
+Step 1: ...\\
+Step 2: ...\\
+Step 3: ...\\
+\\
+Final Answer: <answer>\\
+\\
+Problem:\\
+\{question\}
+\end{quote}
+
 \subsection{Tree-of-Thought Design}
-% Branch count, why branch generation needs a non-zero temperature (ask
-% me to explain -- it's about search diversity, not an arbitrary choice),
-% the selection step, total call cost vs CoT.
+
+In the Tree-of-Thought setup, the model makes three separate calls to
+create independent candidate solutions, called branches. Then, it makes
+one more call to choose the best branch. This means there are four calls
+per question, instead of just one as in CoT.
+
+For each of the three branches, the model uses the same step-by-step
+prompt as in CoT, with one addition: each response is clearly marked as
+a separate attempt (``this is one independent solution attempt, attempt
+N of 3''), and the model is explicitly told not to hedge between
+methods but to commit to one approach and carry it through completely.
+The branches are generated at a temperature of 0.7 instead of 0. This is
+intentional: if the temperature were 0, each call would give almost the
+same answer, making the three branches too similar to compare. Using a
+moderate temperature helps ensure the branches are truly different
+solutions.
+
+After generating all three branches, the model makes another call at
+temperature 0 to keep the process consistent. It reviews the full text of
+all three candidates and evaluates which one is most mathematically
+sound. The model is told not to pick the answer that appears most often
+if the branches disagree, but instead to choose the branch with the
+strongest reasoning:
+
+\begin{quote}
+\ttfamily\small
+Evaluate each candidate branch for mathematical soundness. Select the
+ONE branch most likely to be correct and well-reasoned. If multiple
+branches reach the same final answer through valid reasoning, prefer
+the clearest derivation. If branches disagree, select based on which
+reasoning is most rigorous and free of errors --- do not simply pick
+the majority answer without checking the reasoning.
+\end{quote}
+
+It returns the number of the chosen branch and a brief explanation
+(``Selected Branch: <branch number>'', ``Justification: <one sentence,
+maximum 25 words>''). The full text of the selected branch is then used
+just like a CoT response. If this selection response cannot be parsed
+into a branch number, for example if the model does not follow the
+requested output format, the pipeline falls back to using the first
+generated branch rather than failing the run
+(\texttt{src/parser/response\_parser.py}). This is a deliberate
+robustness choice: a single malformed selection call degrades gracefully
+to a specific, predictable branch rather than discarding the entire
+question's data or crashing the pipeline mid-run.
+
+As mentioned in Chapter~\ref{chap:literature}, this version of
+Tree-of-Thought is simpler than the full design by Yao et al. It does
+just one round of branching and one selection step, instead of searching
+and pruning at every reasoning stage. This approach keeps the number of
+calls per question fixed at four, making costs predictable, but it means
+the model does not explore or backtrack within a branch after it is
+created.
 
 \section{Answer Evaluation}
-% How correctness is determined -- ask me to explain the normalisation
-% pipeline (LaTeX fractions, symbolic equivalence via SymPy, etc.) so you
-% can describe it accurately rather than guessing.
+\label{sec:answer-eval}
+
+Answer correctness is determined by an automated evaluator rather than
+manual grading, since the study involves 786 model responses. Before
+comparison, both the ground-truth answer and the model's extracted final
+answer are passed through a normalisation step that strips formatting
+artefacts that would otherwise cause two mathematically identical answers
+to be marked as different: code fences and bold markers, commas, dollar
+signs, LaTeX inline-math delimiters, \texttt{\textbackslash text\{\}} and
+\texttt{\textbackslash boxed\{\}} wrappers, and LaTeX fraction notation
+(\texttt{\textbackslash frac\{a\}\{b\}}, including the brace-less
+shorthand \texttt{\textbackslash frac12}) converted to plain division
+(\texttt{a/b}). A literal percent sign is converted to its decimal
+equivalent (e.g. ``10\%'' to $0.1$) only when the answer is purely a
+number followed by \%, so that a percent sign appearing elsewhere in an
+answer is not misinterpreted. Mixed numbers such as ``2 1/3'' are detected
+and converted to their decimal value before general normalisation runs,
+since normalisation removes whitespace and would otherwise collapse
+``2 1/3'' into the digit string ``21/3''.
+
+After normalisation, two answers are compared using three methods, and
+are considered correct if any one of them agrees:
+
+\begin{enumerate}
+  \item \textbf{Numeric comparison}: both answers are converted to
+  floating-point numbers (handling plain integers, decimals, and
+  fractions) and compared with a small numerical tolerance, so that
+  trivial floating-point representation differences are not counted as
+  errors.
+  \item \textbf{Symbolic comparison}: both answers are parsed as
+  algebraic expressions using SymPy, and are considered equal if their
+  difference simplifies to zero. This allows answers that are
+  algebraically equivalent but written differently (e.g. an unsimplified
+  expression versus its simplified form) to be marked correct.
+  \item \textbf{Text comparison}: as a final fallback, the normalised
+  answers are compared as exact strings.
+\end{enumerate}
+
+This normalisation and comparison logic is covered by unit tests against
+a set of known tricky cases (fractions, percentages, mixed numbers, and
+symbolic equivalence). A separate, planned validation step -- manually
+grading a sample of real model outputs by hand to check the automatic
+evaluator against human judgment, rather than only hand-picked test
+cases -- was not completed; this is discussed as a limitation in
+Section~\ref{sec:limitations}.
 
 \section{Research Questions and Statistical Tests}
-% RQ1: chi-square / Fisher's exact test of independence -- what's being
-%      tested, what the contingency table looks like.
-% RQ2: Kruskal-Wallis -- why this test for comparing >2 groups of a
-%      non-normal distribution (error-location-normalised-by-step-count).
-% RQ3: McNemar's exact test -- why this is the correct test for a PAIRED
-%      binary outcome (same question, same model, two conditions), and
-%      why comparing raw accuracy percentages would be wrong here.
+
+This section explains how each research question is addressed
+statistically. For the two research questions that use a formal
+significance test, it covers what is being tested, the type of data
+compared, and why each test is the best option instead of a simpler one.
+
+\subsection{Chi-Square Test of Independence}
+
+RQ1 asks whether the distribution of error types is different across the
+three models. To test this, a contingency table is created with one row
+for each model and one column for each of the 11 error types in the
+taxonomy; ``Correct'' is a separate, twelfth classification and is not
+used as a column, since only incorrect responses are classified by error
+type. The table is filled with the number of incorrect responses for each
+model and error type combination. The Chi-square test of independence
+checks whether error type and model are unrelated, meaning each model
+would have the same pattern of error types and any differences are due to
+chance. Some cells in the table have small expected counts, which makes
+the Chi-square approximation less reliable for those cells. This is noted
+as a caution with the test result, not as a reason to dismiss it, and is
+discussed more in Section~\ref{sec:limitations}.
+
+Formally, the test statistic is
+\[
+\chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \frac{(O_{ij} - E_{ij})^2}{E_{ij}}
+\]
+where $O_{ij}$ is the observed count of incorrect responses for model
+$i$ and error type $j$, $E_{ij} = \frac{(\text{row } i \text{
+total})(\text{column } j \text{ total})}{n}$ is the expected count
+under independence, $r = 3$ is the number of models, $c = 11$ is the
+number of error-type categories, and $n$ is the total number of
+incorrect responses. Under the null hypothesis of independence, the
+statistic follows a Chi-square distribution with $(r-1)(c-1) = 20$
+degrees of freedom.
+
+\subsection{Step Count and Correctness}
+
+RQ2 asks whether there is a descriptive relationship between step count
+and answer correctness. For each model and difficulty tier, the mean and
+median number of solution steps are compared between correct and
+incorrect responses. Unlike RQ1 and RQ3, no formal significance test is
+applied to this comparison: the analysis is exploratory, and any
+differences in step count between correct and incorrect responses are
+reported as observed patterns rather than statistically confirmed
+effects.
+
+\subsection{McNemar's Exact Test}
+
+RQ3 asks whether Tree-of-Thought leads to different answer correctness
+compared to Chain-of-Thought for each model. Each model answers the same
+131 questions using both CoT and ToT, so the results are paired, not
+independent. Comparing the raw accuracy percentages directly would
+wrongly treat 262 observations as independent, when there are actually
+131 pairs. McNemar's test focuses only on the discordant pairs, which are
+questions where the two methods disagree: correct under CoT but not ToT
+($b$), or correct under ToT but not CoT ($c$). Concordant pairs, where
+both are correct or both are incorrect, do not help determine which
+method is better and are left out. The exact version of the test used
+here applies a binomial test to $\min(b, c)$ with $n = b + c$ trials at
+$p = 0.5$. This is more suitable than the chi-square version of McNemar's
+test for the sample sizes in this study.
+
+Formally, the exact test computes a two-sided binomial p-value,
+\[
+p = 2 \sum_{k=0}^{\min(b,c)} \binom{n}{k} \left(\frac{1}{2}\right)^n,
+\qquad n = b + c,
+\]
+capped at 1 if the sum exceeds 0.5, where $\binom{n}{k}$ is the number
+of ways to choose $k$ successes from $n$ trials. This directly tests the
+null hypothesis that a discordant pair is equally likely to favour
+either prompting strategy, without relying on the chi-square
+approximation McNemar's original test uses, which is unreliable at the
+small $n$ values in this study ($n \leq 10$ for every model).
+
+\subsection{Confidence Intervals for Accuracy}
+
+Accuracy figures reported throughout Chapter~\ref{chap:results} are
+accompanied by 95\% confidence intervals computed with the Wilson score
+interval, rather than the normal approximation, since the normal
+approximation is unreliable at small $n$ or when the observed proportion
+is close to 0 or 1 -- both of which occur in this study's smaller
+subgroups (Section~\ref{sec:limitations}). For $x$ correct responses out
+of $n$ trials, with observed proportion $\hat{p} = x/n$ and $z$ the
+standard normal critical value for the desired confidence level ($z
+\approx 1.96$ for 95\%), the interval is
+\[
+\frac{\hat{p} + \frac{z^2}{2n} \pm z\sqrt{\frac{\hat{p}(1-\hat{p})}{n} +
+\frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}.
+\]
 
 \section{Error Judging Methodology}
-% Primary judge design (evaluates reasoning on its own merits, not vs a
-% reference solution -- ask me why that framing was chosen), the
-% conflict-of-interest problem (Gemini judges Gemini), and the INTENDED
-% neutral-judge validation design (Cohen's kappa, what it measures and why
-% raw agreement rate alone wouldn't be enough) -- describe this as the
-% design/intent, then state plainly it was not completed (Groq daily
-% quota), full detail in docs/limitations.md. Report honestly, don't omit.
+\label{sec:judging}
+
+Each incorrect response is reviewed by an LLM judge: Gemini
+(\texttt{gemini-flash-lite-latest}, resolving to
+\texttt{gemini-3.5-flash-lite}) -- the exact same model configuration
+used for one of the three evaluated models, not a separate judge-specific
+variant. The judge assigns an error type from an 11-category list, notes
+where the first mistake happens, and writes a brief description of the
+error. It also gives a confidence level and a one-sentence explanation.
+
+The judge is told to evaluate a model's reasoning based on its own
+mathematical logic, not by comparing it to a specific solution method. As
+a result, the judge only needs the correct final answer to check whether
+the response is right. It does not matter that AIME questions, unlike
+Hendrycks MATH, do not have official step-by-step solutions. The judge's
+role is to see whether the reasoning makes sense on its own, not whether
+it follows a certain method.
+
+There is a clear conflict of interest in this judging setup. Gemini acts
+as the main judge, but it is also one of the three models being tested.
+This means Gemini sometimes reviews its own answers. As a result, the
+judge might be more forgiving toward responses that match its own style,
+which could unfairly favour Gemini in the comparison.
+
+To address this, the evaluation included a neutral-judge validation step.
+Up to 120 responses judged by Gemini were supposed to be re-judged by a
+different model (\texttt{llama-3.3-70b-versatile}, via Groq). The
+agreement between judges was measured using Cohen's kappa instead of just
+the raw agreement rate. Raw agreement does not account for agreement that
+could happen by chance, which is important because the error categories
+are unevenly distributed. Cohen's kappa adjusts for this and gives a
+better sense of whether the judges truly agree.
+
+This validation step was not finished. The neutral judge model reached
+Groq's free daily token limit (100,000 tokens per day) after about 20 to
+25 of the planned 120 validation calls, since each call used over 4,000
+tokens. Completing all 120 would have required spreading the calls over 5
+or 6 days. This was a planned decision due to time limits, not a mistake,
+and is reported here for transparency. More details are given as a
+limitation in Section~\ref{sec:limitations}.
 
 \section{Limitations}
 \label{sec:limitations}
-% Ask me to walk through: the reasoning-effort confound (controlled, not
-% eliminated), AIME contamination risk, judge conflict of interest, fixed
-% ToT branch count as a cost/thoroughness tradeoff, small Hard-tier
-% category Ns, and the pending human-vs-automatic grading validation.
+
+This section lists the main limitations of the method used in this
+study. Some were mentioned earlier, but they are collected here for
+completeness.
+
+\textbf{Reasoning-effort confound (controlled, not eliminated).} As
+explained in Section~\ref{sec:models}, Gemini and GPT-OSS-120B's
+internal reasoning-effort settings are set to their lowest value and kept
+the same for both CoT and ToT. This helps ensure that changes in internal
+reasoning do not affect the comparison in RQ3. However, this only
+controls the confound; it does not remove it. Setting the effort to the
+minimum does not guarantee that no internal reasoning happens, especially
+for GPT-OSS-120B, which may still do some reasoning even at low effort.
+The exact impact on accuracy is not measured separately in this study.
+
+\textbf{Data contamination risk.} There is some risk that the models have
+seen the benchmark questions, or similar ones, during pretraining instead
+of solving them through reasoning. This risk is higher for Hendrycks MATH
+(used for Easy and Medium) because it is widely used for machine learning
+training and evaluation. AIME (used for Hard) is also public, but the
+specific AIME questions used here are comparatively recent and less
+widely republished, which makes memorisation less likely, though not
+impossible. This study does not eliminate either risk.
+
+\textbf{Judge conflict of interest.} As explained in
+Section~\ref{sec:judging}, Gemini is both the main error-judging model
+and one of the three models being evaluated, which creates a direct
+conflict of interest. The planned solution was to use a neutral judge and
+measure agreement with Cohen's kappa, but this was not done because the
+neutral judge's provider had a daily token limit.
+
+\textbf{Fixed Tree-of-Thought branch count.} For each ToT question, three
+candidate branches are generated (see Section~\ref{sec:prompting}). This
+keeps the cost per question fixed and predictable at four model calls.
+The number three was chosen for scope, not based on testing other branch
+counts. Using more branches could explore more solutions per question,
+but would also predictably increase costs.
+
+\textbf{Small subgroup sample sizes.} The Hard tier categories are
+unbalanced (Algebra 16, Combinatorics 16, Number Theory 11, Probability
+8), so comparisons within this tier use small sample sizes and should be
+viewed with caution. The Wilson score interval is used for confidence
+intervals because it works better than the normal approximation with
+small samples or extreme values. This concern also appears in RQ1's
+Chi-square test, which was flagged due to a low minimum expected cell
+count (0.26) in the Model x Error Type table.
+
+\textbf{Pending answer-evaluator validation.} As explained in
+Section~\ref{sec:answer-eval}, the automatic answer evaluator was tested with
+unit tests on tricky cases. However, the planned step of manually grading
+a sample of real model outputs to compare the automatic evaluator with
+human judgment was not done.

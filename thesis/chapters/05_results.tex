@@ -1,60 +1,456 @@
 \chapter{Results}
 \label{chap:results}
 
-% YOU WRITE THIS CHAPTER. Data collection and analysis are complete --
-% nothing here is blocked anymore. Ask me to walk you through any table/
-% test result below before you write about it; I'll explain what the
-% numbers mean, you decide how to present and phrase them.
-
-\section{Overview}
-% One short paragraph: what this chapter covers and how it's organised
-% (overall accuracy, then RQ1/RQ2/RQ3 in turn, then execution time).
+This chapter presents the experimental findings of this study. It
+reports overall accuracy, then addresses each research question in turn
+(RQ1 error types, RQ2 step count versus correctness, RQ3 CoT versus ToT),
+before closing with per-question correctness, judge classification
+coverage, and execution time.
 
 \section{Overall Accuracy}
-% Descriptive accuracy by model, prompt type, difficulty tier, category.
-% Source: outputs/tables/accuracy_by_model_prompt.csv,
-% accuracy_by_model_category.csv, accuracy_by_model_prompt_difficulty.csv.
-% Note Easy/Medium are near-ceiling (95-100%) -- ask me why this matters
-% for how much weight the Hard-tier results should carry in your argument.
+\label{sec:overall-accuracy}
 
-\section{RQ1 -- Error Type Distribution}
-% Source: outputs/tables/rq1_error_distribution.csv,
-% rq1_error_type_by_model.csv, rq1_independence_test.csv (chi-square).
-% Figures: outputs/figures/error_distribution.png (overall ranking),
-% error_heatmap_top6_by_prompt.png (top 6 by model, CoT vs ToT).
-% Ask me to explain the chi-square "caution" flag (small expected cell
-% counts) before stating the independence-test result as clean.
+Table~\ref{tab:accuracy-difficulty} shows accuracy by model, difficulty
+tier, and prompting strategy.
 
-\section{RQ2 -- Error Location}
-% Source: outputs/tables/rq2_error_position_summary.csv,
-% rq2_error_position_detail.csv, rq2_kruskal_wallis.csv (significant,
-% p=0.0016 -- ask me to explain what this test does and does not tell you).
+\begin{table}[h]
+  \centering
+  \caption{Accuracy by model, difficulty tier, and prompting strategy.}
+  \label{tab:accuracy-difficulty}
+  \begin{tabular}{llrr}
+    \toprule
+    Model & Difficulty & CoT & ToT \\
+    \midrule
+    \multirow{3}{*}{Gemini} & Easy & 95.0\% & 95.0\% \\
+     & Medium & 100.0\% & 97.5\% \\
+     & Hard & 51.0\% & 56.9\% \\
+    \midrule
+    \multirow{3}{*}{GPT-OSS-120B} & Easy & 100.0\% & 100.0\% \\
+     & Medium & 100.0\% & 100.0\% \\
+     & Hard & 56.9\% & 72.5\% \\
+    \midrule
+    \multirow{3}{*}{Mistral Large} & Easy & 97.5\% & 97.5\% \\
+     & Medium & 100.0\% & 100.0\% \\
+     & Hard & 47.1\% & 62.7\% \\
+    \bottomrule
+  \end{tabular}
 
-\section{RQ3 -- CoT vs.\ ToT}
-% Source: outputs/tables/rq3_prompt_comparison.csv (McNemar per model).
-% The headline nuance: significant for Groq and Mistral, NOT for Gemini --
-% ask me to walk through why that's a more interesting finding than "ToT
-% wins," and how to phrase it precisely.
+  \vspace{4pt}
+  \footnotesize
+  Model versions: Gemini = \texttt{gemini-3.5-flash-lite}; GPT-OSS-120B =
+  \texttt{openai/gpt-oss-120b} (via Groq); Mistral Large = Mistral Large 3
+  (\texttt{mistral-large-2512}).
+\end{table}
 
-\section{Per-Question Correctness}
-% State the headline numbers here (e.g. "10 Hard-tier questions were
-% answered incorrectly by all 6 model/prompt conditions"), citing
-% outputs/tables/hard_tier_hardest_questions.csv. Point to Appendix
-% Figure~\ref{app:correctness-heatmaps} for the full per-question detail
-% rather than reproducing the full heatmaps here -- keeps this chapter
-% inside the page budget.
+Easy and Medium accuracy is at or near ceiling (95--100\%) for every
+model and prompting strategy, with no accuracy below 95\%. The Hard tier
+is the only tier where accuracy varies meaningfully across models and
+prompting strategies, ranging from 47.1\% to 72.5\%. Because 80 of the
+131 questions (Easy and Medium combined) show almost no variation across
+models, any comparison between models based on overall accuracy is, in
+practice, driven almost entirely by performance on the 51 Hard-tier
+questions.
+
+\subsection*{Precision of Accuracy Estimates}
+
+The accuracy percentages reported above are point estimates.
+Table~\ref{tab:ci-hard} reports their 95\% Wilson score confidence
+intervals (Section~\ref{sec:models}) for the Hard tier, where sample
+size is smallest ($n=51$) and accuracy estimates are least precise.
+
+\begin{table}[h]
+  \centering
+  \caption{Hard-tier accuracy with 95\% Wilson confidence intervals.}
+  \label{tab:ci-hard}
+  \begin{tabular}{llrrr}
+    \toprule
+    Model & Prompt & Accuracy & 95\% CI & Width \\
+    \midrule
+    Gemini & CoT & 51.0\% & [37.7\%, 64.1\%] & 26.5pp \\
+    Gemini & ToT & 56.9\% & [43.3\%, 69.5\%] & 26.2pp \\
+    GPT-OSS-120B & CoT & 56.9\% & [43.3\%, 69.5\%] & 26.2pp \\
+    GPT-OSS-120B & ToT & 72.5\% & [59.1\%, 82.9\%] & 23.8pp \\
+    Mistral Large & CoT & 47.1\% & [34.1\%, 60.5\%] & 26.4pp \\
+    Mistral Large & ToT & 62.7\% & [49.0\%, 74.7\%] & 25.7pp \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Every Hard-tier interval spans roughly 24--27 percentage points,
+reflecting the substantial sampling uncertainty at this sample size: for
+example, Gemini's 51.0\% CoT accuracy carries a 95\% CI of [37.7\%,
+64.1\%], meaning the data are consistent with Gemini's true Hard-tier
+CoT accuracy being anywhere from just above one-third to just below
+two-thirds. Easy and Medium tier intervals are considerably narrower
+(8.8--15.1 percentage points) despite similar sample sizes ($n=40$),
+because accuracy in those tiers sits close to the ceiling of 100\%,
+where the Wilson interval is naturally tighter. This asymmetry is a
+direct consequence of the near-ceiling effect discussed in
+Section~\ref{sec:threats-validity}: the Hard tier is simultaneously
+where this dissertation's most informative comparisons take place and
+where those comparisons are least statistically precise.
+
+\section{Accuracy by Mathematical Category}
+\label{sec:category-accuracy}
+
+This section shows the accuracy results combined across difficulty
+tiers and prompting strategies, separated into the four mathematical
+categories in the dataset: Algebra, Combinatorics, Number Theory, and
+Probability.
+
+\begin{table}[h]
+  \centering
+  \caption{Accuracy by model and mathematical category, pooled across difficulty tier and prompting strategy.}
+  \label{tab:accuracy-category}
+  \begin{tabular}{llrr}
+    \toprule
+    Model & Category & N & Accuracy \\
+    \midrule
+    \multirow{4}{*}{Gemini} & Algebra & 72 & 79.2\% \\
+     & Combinatorics & 72 & 72.2\% \\
+     & Number Theory & 62 & 90.3\% \\
+     & Probability & 56 & 80.4\% \\
+    \midrule
+    \multirow{4}{*}{GPT-OSS-120B} & Algebra & 72 & 88.9\% \\
+     & Combinatorics & 72 & 84.7\% \\
+     & Number Theory & 62 & 87.1\% \\
+     & Probability & 56 & 83.9\% \\
+    \midrule
+    \multirow{4}{*}{Mistral Large} & Algebra & 72 & 88.9\% \\
+     & Combinatorics & 72 & 70.8\% \\
+     & Number Theory & 62 & 88.7\% \\
+     & Probability & 56 & 78.6\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Combinatorics is the weakest category for all models. Gemini has its
+lowest accuracy here at 72.2\%, Mistral Large at 70.8\%, and
+GPT-OSS-120B has its second-lowest, just above Probability (84.7\%
+compared to 83.9\%). Number Theory is a strong category for all three
+models. It is the highest for Gemini (90.3\%) and the second-highest for
+both GPT-OSS-120B (87.1\%) and Mistral Large (88.7\%), both just behind
+Algebra.
+
+This pattern corresponds to the RQ1 finding that Combinatorial Counting
+Error is the most common error type for all three models
+(Section~\ref{sec:rq1}). The category where models most often get the
+answer wrong is also where this main error type appears. Because this
+breakdown combines all difficulty tiers, and the Hard tier has uneven
+category counts (Section~\ref{sec:threats-validity}), this pattern is
+meant to be descriptive. No significance test was done for
+category-level accuracy in this dissertation.
+
+\section{Error Type Distribution}
+\label{sec:rq1}
+
+Every incorrect response is classified against a fixed taxonomy of 11
+error types (Section~\ref{sec:judging}). Before presenting the
+distribution of these error types across models, the meaning of each
+category is stated explicitly below, together with one real example from
+this project's judged data.
+
+\begin{description}
+  \item[Arithmetic Error] A plain calculation slip. Example: ``Incorrect
+  calculation of 162 times two-thirds.''
+  \item[Algebraic Manipulation Error] A mistake while simplifying,
+  expanding, or solving an equation. Example: ``Incorrect expansion of
+  complex multiplication yielding wrong real part.''
+  \item[Probability Reasoning Error] Misapplied independence, conditional
+  probability, or normalisation. Example: ``Calculated conditional
+  probability incorrectly using flawed enumeration.''
+  \item[Combinatorial Counting Error] Over- or under-counting, or the
+  wrong choice between permutation and combination. Example: ``Ignored
+  leap year occurring in year 0 or negative.''
+  \item[Number Theory Error] Wrong handling of divisibility, modular
+  arithmetic, or integer properties. Example: ``Failed to correctly
+  solve modular congruences for digit replacement.''
+  \item[Formula Misapplication] A real formula used, but the wrong one
+  for the situation. Example: ``Misapplied Euler's formula for planar
+  graphs with boundary arcs.''
+  \item[Incorrect Assumption] Reasoning relied on something not actually
+  given or true in the problem. Example: ``Assumed starting after leap
+  year instead of before.''
+  \item[Logical Reasoning Error] A flaw in the deduction itself, not tied
+  to a specific mathematical domain. Example: ``Assumed single
+  intersection without analyzing periodic components.''
+  \item[Incomplete Reasoning] Reasoning stopped short of justifying the
+  answer. Example: ``Failed to find the full family of solutions on the
+  line segment connecting endpoints.''
+  \item[Answer Extraction Error] The reasoning was fine, but no final
+  answer could be parsed out of it. In this dataset, its only occurrence
+  ($n=1$) was a pipeline fallback rather than a judged example: the
+  automatic parser found no final answer at all, so this row was never
+  seen by the judge, and only carries the system note ``Parser failed to
+  extract the final answer.''
+  \item[Other] A catch-all for anything that does not fit the categories
+  above. Both occurrences of this label in this dataset ($n=2$) were
+  actually judge classification failures after all retries were
+  exhausted (system note: ``Classification failed.''), not genuine
+  examples of an ambiguous reasoning error -- this is stated plainly
+  here rather than presented as if a real example existed.
+\end{description}
+
+Figures~\ref{fig:rq1-cot} and~\ref{fig:rq1-tot} show the full Error Type
+$\times$ Difficulty breakdown for each model, separately for CoT and
+ToT, within the balanced 40 Easy + 40 Medium + 40 Hard question pool (see
+Chapter 3).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{error_type_distribution_by_model_cot.png}
+  \caption{Error Type $\times$ Difficulty, by model, CoT (balanced 40/40/40 pool).}
+  \label{fig:rq1-cot}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{error_type_distribution_by_model_tot.png}
+  \caption{Error Type $\times$ Difficulty, by model, ToT (balanced 40/40/40 pool).}
+  \label{fig:rq1-tot}
+\end{figure}
+
+Errors are almost entirely concentrated in the Hard tier for every model
+and prompting strategy. Easy-tier errors occur only once or twice per
+model, and Medium-tier errors occur only once across the entire dataset
+(Gemini, ToT). This confirms, at the level of individual errors rather
+than aggregate accuracy, that the Easy and Medium tiers carry almost no
+diagnostic information about error behaviour; the entire error-type
+picture is effectively a Hard-tier picture.
+
+A Chi-square test of independence on the full, unrestricted Model x
+Error Type contingency table (all 136 errors across the complete
+131-question dataset, not the balanced pool shown above) gives $\chi^2 =
+27.95$, $df = 20$, $p = 0.111$. At the conventional threshold of $p <
+0.05$, this does not provide statistically significant evidence that the
+overall distribution of error types differs across models. This result
+carries a caution flag: the minimum expected cell count in this table is
+0.265, well below the conventional threshold of 5 below which the
+Chi-square approximation becomes unreliable. This non-significant result
+should therefore be read as inconclusive given the available sample
+size, consistent with the granular breakdown above showing that most
+error-type cells contain very few observations per model.
+
+\section{Error Type Frequency in the Hard Tier}
+\label{sec:hard-tier-freq}
+
+This section examines error type frequency specifically within the Hard
+tier, restricted to the Hard-tier questions that all three models got
+wrong, so that every model's bar chart is drawn from exactly the same
+set of questions rather than each model's own, differently-sized
+wrong-answer pool (17 questions under CoT, 11 under ToT).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_cot.png}
+  \caption{Error type frequency by model, Hard tier, CoT (common-wrong-question pool, $n=17$).}
+  \label{fig:hard-freq-cot}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_tot.png}
+  \caption{Error type frequency by model, Hard tier, ToT (common-wrong-question pool, $n=11$).}
+  \label{fig:hard-freq-tot}
+\end{figure}
+
+Under CoT, Combinatorial Counting Error is the most common error type for
+Gemini (4 of 17) and Mistral Large (6 of 17), but not for GPT-OSS-120B,
+whose most common error is Logical Reasoning Error (5 of 17), with
+Probability Reasoning Error (3) and Combinatorial Counting Error (2)
+behind it. Under ToT, this pattern shifts: Combinatorial Counting Error
+becomes the single most common error type for all three models (Gemini 6
+of 11, GPT-OSS-120B 4 of 11, Mistral Large 5 of 11), including
+GPT-OSS-120B, whose profile converges with the other two models on this
+specific question set, though its overall error count is also lower
+under ToT (11 questions wrong here versus 17 under CoT, reflecting the
+same ToT improvement already seen in the accuracy figures in
+Section~\ref{sec:overall-accuracy}).
+
+\section{Step Count and Correctness}
+\label{sec:step-count}
+
+This section presents the mean and median number of reasoning steps
+taken for each model, organised by difficulty tier and whether the final
+answer was correct, pooling CoT and ToT responses together for each
+model/difficulty/correctness combination. On the Easy and Medium tiers,
+all three models perform nearly perfectly: GPT-OSS-120B answers every
+Easy and Medium question correctly with both prompting strategies (80 out
+of 80 in each tier), and Gemini and Mistral Large each have only one to
+four incorrect responses in these tiers combined. With so few incorrect
+cases, it is not possible to make a meaningful comparison between correct
+and incorrect step counts except on the Hard tier, where all three models
+have a substantial number of both correct and incorrect answers (36 to 47
+incorrect responses per model).
+
+On the Hard tier, Gemini and GPT-OSS-120B show almost no difference in
+step count between correct and incorrect responses: Gemini's mean step
+count is 7.85 for correct answers and 7.77 for incorrect ones, and
+GPT-OSS-120B's is 5.95 for correct and 6.14 for incorrect. For these two
+models, a longer or shorter reasoning process does not seem to be linked
+to whether the final answer was correct.
+
+Mistral Large shows a clearly different pattern. Its incorrect Hard-tier
+answers have a mean step count of 16.17 (median 12.5), compared with a
+mean of 13.68 (median 8.0) for correct answers. The median is
+substantially higher for incorrect answers (56\% higher than for correct
+answers), while the mean is also higher but by a smaller margin (18\%
+higher). Figures~\ref{fig:step-count-cot} and~\ref{fig:step-count-tot}
+show the step count per question for CoT and ToT and illustrate this
+visually. Mistral Large's markers are consistently more spread out and
+reach further into the 20 to 50 step range than Gemini's or
+GPT-OSS-120B's, especially on the Hard tier. In contrast, GPT-OSS-120B's
+markers form the tightest and most consistent cluster of the three models
+across all difficulty tiers.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{step_count_by_question_cot.png}
+  \caption{Step count per question by model and correctness, CoT.}
+  \label{fig:step-count-cot}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{step_count_by_question_tot.png}
+  \caption{Step count per question by model and correctness, ToT.}
+  \label{fig:step-count-tot}
+\end{figure}
+
+\section{CoT vs.\ ToT}
+
+This section examines whether Tree-of-Thought (ToT) prompting leads to
+significantly different answer accuracy compared to Chain-of-Thought
+(CoT) prompting for each model. The analysis uses McNemar's Exact Test on
+paired results from all 131 questions.
+
+When combining all three difficulty tiers, every model shows higher
+overall accuracy with ToT than with CoT: Gemini goes from 79.4\% to
+80.9\%, GPT-OSS-120B from 83.2\% to 89.3\%, and Mistral Large from 78.6\%
+to 84.7\%. However, because each model answers the same 131 questions
+with both strategies, these percentages cannot be directly compared. Only
+the questions where the two strategies give different answers (the
+discordant pairs) show which strategy performs better.
+
+For Gemini, there are 10 discordant pairs: 4 questions are correct only
+with CoT, and 6 are correct only with ToT. McNemar's exact test gives
+$p = 0.754$, which is not significant. Although ToT shows higher raw
+accuracy, this difference could easily be due to chance because there
+are so few discordant pairs.
+
+For GPT-OSS-120B, there are also 10 discordant pairs, but the results are
+much more one-sided: only 1 question is correct only with CoT, while 9
+are correct only with ToT. This gives $p = 0.021$, which is significant
+at the 0.05 level.
+
+For Mistral Large, the result is the most one-sided: out of 8 discordant
+pairs, none are correct only with CoT, and all 8 are correct only with
+ToT. Every disagreement between the two strategies favours ToT. This
+gives $p = 0.008$, which is the strongest evidence among the three
+models that ToT affects performance.
+
+Overall, these results do not support a general claim that ``ToT
+improves performance.'' The improvement is statistically significant for
+two of the three models (GPT-OSS-120B and Mistral Large), but not for
+Gemini, where the higher ToT accuracy could be due to chance because
+there are so few discordant pairs. The per-tier accuracy results in
+Table~\ref{tab:accuracy-difficulty} show that this pattern is most
+noticeable in the Hard tier. In the Easy and Medium tiers, accuracy is
+already very high for all models, so there is little room for a
+prompting strategy to make a measurable difference.
+
+\section{Question-Level Correctness Across Conditions}
+
+This section examines correctness by focusing on each question instead
+of each model. It considers how consistently each question is answered
+across all six model-and-prompt combinations, which include three models
+and two prompting strategies.
+
+For the Easy and Medium tiers, correctness is nearly the same across all
+conditions. Out of 80 questions, 77 (96.25\%) are answered correctly by
+all six model and prompt combinations, and none are answered incorrectly
+by all six. Only three questions show any differences between
+conditions. This means these tiers are solved for all three models, no
+matter which prompting strategy is used.
+
+The Hard tier is quite different. Out of 51 Hard-tier questions, 10
+(19.6\%) are answered incorrectly by all six conditions, while 13
+(25.5\%) are answered correctly by all six. The other 28 questions
+(54.9\%) have mixed results, with at least one condition getting the
+answer right and at least one getting it wrong. Figure~\ref{fig:correctness-heatmap-hard}
+shows this in detail. Each row represents a Hard-tier question with at
+least one incorrect answer, and each column shows one of the six model
+and prompt combinations, coloured by whether the answer was correct.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{correctness_heatmap_hard.png}
+  \caption{Per-question correctness across all six model/prompt conditions, Hard tier (questions with at least one incorrect answer).}
+  \label{fig:correctness-heatmap-hard}
+\end{figure}
+
+The corresponding heatmap for the Easy and Medium tiers is not shown
+here, since there is so little variation to display that it would be
+less useful than the Hard-tier heatmap for seeing where the models
+differ.
 
 \section{Judge Classification Coverage}
-% State plainly: all 136 incorrect responses were classified by the
-% primary judge (Gemini). The neutral-judge validation sample was
-% attempted but not completed (see docs/limitations.md) -- report this
-% honestly here rather than omitting it, since Chapter~\ref{chap:discussion}
-% needs to discuss what that gap does and does not undermine.
+
+Out of 786 total responses, 136 were marked as incorrect and needed to be
+sorted into one of the 11 error-type categories described in
+Section~\ref{sec:judging}. Every incorrect response was given a specific
+error-type classification, so none were left unclassified. This complete
+coverage was ensured by the \texttt{assert\_no\_stale\_error\_labels}
+check described in Section~\ref{sec:data-quality}, which requires that
+each incorrect response has an error-type label. As a result, no
+response could move through the process without being classified.
+
+Of those 136 incorrect responses, two categories served as fallback
+labels instead of real error diagnoses: Answer Extraction Error (1
+response) and Other (2 responses), as explained in
+Section~\ref{sec:rq1}. These two categories covered 3 out of 136
+incorrect responses (2.2\%). For the other 133 responses (97.8\%), the
+judge used one of the nine main error-type categories instead of a
+fallback label.
+
+A separate validation step was planned in which a neutral judge model,
+not itself one of the three models under evaluation, would independently
+classify a sample of the same responses, with agreement measured using
+Cohen's kappa. This would have checked for self-evaluation bias arising
+from Gemini judging its own responses alongside those of the other two
+models. This validation was attempted but not completed, as the neutral
+judge's provider imposed a daily token limit that the study's scale
+exceeded (Section~\ref{sec:limitations}). This gap is reported here
+rather than omitted, since Chapter~\ref{chap:discussion} discusses what
+it does and does not undermine about the error-type findings.
 
 \section{Execution Time}
-% Brief summary paragraph only -- this isn't a research question, just
-% reported for transparency (ToT costs ~4x CoT's calls by construction).
-% Point to Appendix for the full figures
-% (execution\_time\_by\_question\_\{cot,tot\}.png,
-% execution\_time\_by\_difficulty\_\{cot,tot\}.png) rather than including
-% all four here.
+\label{sec:execution-time}
+
+Execution time is reported here for transparency, not as a formal
+research question. By construction, ToT costs approximately four times
+the generation calls of CoT per question (three branch generations plus
+one selection call, versus a single CoT call), so a substantial increase
+in wall-clock time under ToT is expected.
+
+Pooling across all three difficulty tiers, mean execution time per
+response is 12.64s (CoT) versus 31.62s (ToT) for Gemini, a 2.50x
+increase; 9.77s versus 44.55s for GPT-OSS-120B, a 4.56x increase, closest
+to the theoretical 4x call-count ratio; and 43.42s versus 130.80s for
+Mistral Large, a 3.01x increase. Mistral Large is markedly slower than
+the other two models under both prompting strategies, consistent with
+its free-tier rate limit of 2 requests per minute described in
+Section~\ref{sec:pipeline}.
+
+Figure~\ref{fig:execution-time-tot} shows this per question under ToT:
+Mistral Large's Hard-tier execution times are the most extreme, with
+several questions exceeding the 300s axis cap (labelled individually up
+to 894s). The corresponding CoT figure, where execution times are
+comparatively unremarkable, is not shown here.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{execution_time_by_difficulty_tot.png}
+  \caption{Execution time per question by model and difficulty tier, ToT.}
+  \label{fig:execution-time-tot}
+\end{figure}

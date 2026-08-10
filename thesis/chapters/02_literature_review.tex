@@ -1,42 +1,270 @@
 \chapter{Literature Review}
 \label{chap:literature}
 
-% YOU WRITE THIS CHAPTER. Ask me to explain any paper/concept below before
-% you write about it -- I can summarise a paper's actual contribution for
-% you to then describe in your own words, but I won't write the review text.
+This chapter reviews the literature underpinning the design of this
+dissertation. It examines the two prompting strategies under study,
+Chain-of-Thought and Tree-of-Thought, including the gap between the
+tree-search design described in the original Tree-of-Thought literature
+and the reduced-scale version implemented in this project. It then reviews
+the two benchmark sources from which the evaluation dataset is drawn, the
+Hendrycks MATH dataset and the American Invitational Mathematics
+Examination, before examining LLM-as-a-Judge evaluation methodology and
+the self-evaluation bias risk it introduces for this specific study.
+Finally, it identifies the literature gap this dissertation's error-type
+analysis is intended to address.
 
-\section{Overview}
-% One short paragraph: what this chapter covers and how it's organised.
+The capabilities explored in this dissertation build on earlier research
+showing that increasing model size and training data leads to better
+general-purpose language skills. Brown et al.~\cite{brown2020fewshot}
+showed with GPT-3 that a large enough language model can handle new
+tasks using just a few in-context examples, without needing
+task-specific fine-tuning. This ability is the basis for the zero-shot
+and few-shot prompting strategies examined in this chapter. Chowdhery et
+al.~\cite{chowdhery2022palm} continued this trend with PaLM, a
+540-billion-parameter model, and found that reasoning and arithmetic
+skills kept improving at this scale instead of levelling off. This
+result supports the idea that reasoning-focused prompting strategies
+like CoT and ToT are worth testing on the largest models available.
 
 \section{Prompting Strategies for Reasoning}
 \subsection{Chain-of-Thought Prompting}
-% \cite{wei2022chain} -- ask me what this paper actually showed and why
-% it matters as your baseline condition.
+
+Chain-of-Thought (CoT) prompting, introduced by Wei et
+al.~\cite{wei2022chain}, demonstrated that providing exemplars of
+intermediate reasoning steps substantially improves the performance of
+sufficiently large language models on arithmetic, commonsense, and
+symbolic problem-solving tasks. Rather than mapping a question directly to
+an answer, CoT externalises the intermediate reasoning into a generated
+sequence of natural-language steps, which the model then conditions on
+when producing the final answer. Kojima et
+al.~\cite{kojima2022zeroshot} subsequently showed that even a simple
+trigger phrase such as ``Let's think step by step'' could elicit similar
+reasoning absent hand-written exemplars, indicating that step-by-step
+reasoning behaviour is latent within sufficiently large models rather than
+something that must be taught anew for each task. Li et
+al.~\cite{li2024serial} provide a theoretical account of why this helps:
+CoT increases the effective serial computational capacity of transformer
+models, which are structurally limited in performing sequential operations
+within a single forward pass, by allowing intermediate computational state
+to be externalised as generated tokens rather than held only in the
+model's internal activations.
+
+This conceptual account also clarifies CoT's limitations. It describes an
+increase in computational capacity, not a guarantee of reliability: CoT
+makes deeper reasoning possible without guaranteeing that the generated
+reasoning steps are logically valid, and because generation is a single
+autoregressive sequence, an error introduced early in the chain has no
+mechanism for correction or backtracking later in the same response. Wang
+et al.~\cite{wang2023selfconsistency} addressed the single-trajectory
+aspect of this problem with Self-Consistency, which samples multiple
+independent CoT reasoning paths for the same question and selects the
+final answer by majority vote. This improves robustness against random
+sampling noise in any single trajectory, but the paths it aggregates are
+generated independently, with no interaction or evaluation between them
+during generation -- if multiple sampled paths share the same underlying
+reasoning error, majority voting reinforces the incorrect answer rather
+than correcting it. This distinction between independently sampled paths
+and an interactively searched space of reasoning steps directly motivates
+the alternative approach examined next.
+
+A related line of work improves CoT through training rather than
+inference-time sampling: Zhang et al.~\cite{zhang2024preference} propose
+Chain of Preference Optimization, which fine-tunes a model directly on
+preferences between correct and incorrect reasoning paths. This
+dissertation instead evaluates prompting strategies without additional
+fine-tuning, keeping all three models in their off-the-shelf, publicly
+served form.
 
 \subsection{Tree-of-Thought Prompting}
-% \cite{yao2023tree} -- ask me to explain the full tree-search design vs.
-% the reduced-scale multi-branch version actually implemented here, and
-% why that's a defensible scope decision to state explicitly, not hide.
+\label{sec:tot-scope}
+
+Tree-of-Thought (ToT), introduced by Yao et al.~\cite{yao2023tree},
+extended by Long~\cite{long2023tot}, and given a probabilistic
+formulation by Cao et al.~\cite{cao2023probabilistic}, reformulates
+inference as a search
+problem over a structured space of intermediate reasoning states, rather
+than a single linear sequence or a set of independently sampled sequences.
+In the design described by Yao et al., the model generates multiple
+candidate continuations at each step of the reasoning process, evaluates
+them against heuristic or model-based criteria, and selectively expands
+the most promising branches while pruning others -- a genuine
+multi-step search, potentially with backtracking, across a tree that can
+grow substantially as reasoning depth increases.
+
+Cao et al.~\cite{cao2023probabilistic} approach branch selection as a
+probabilistic scoring problem over possible reasoning paths, instead of
+using a single deterministic evaluation, for knowledge-intensive
+question answering. While their method is different, it shares the same
+goal as the selection step in this dissertation's ToT implementation:
+picking the most promising candidate from several independently
+generated options.
+
+This distinguishes ToT from Self-Consistency in that branches are
+generated and evaluated conditionally rather than sampled independently
+and aggregated only at the end, making it better suited to problems that
+benefit from active exploration of other reasoning directions.
+
+\textbf{Scope of the Tree-of-Thought implementation in this dissertation.}
+The full tree-search design described above -- with evaluation and
+selective expansion or pruning repeated at every reasoning step -- is
+computationally expensive, since the number of model calls can grow
+substantially with reasoning depth and branching factor. The
+implementation evaluated in this dissertation is a reduced-scale version
+of this design, not the full multi-level search: for each question, three
+candidate solutions are generated independently in full (one branching
+step, not a per-step tree), after which a single separate selection call
+evaluates the three completed candidates and selects the most sound one.
+This is stated explicitly here as a scope decision rather than left
+implicit, since it means the results in this dissertation characterise a
+single-round, breadth-limited form of Tree-of-Thought reasoning rather
+than the deeper, iteratively pruned search Yao et al. describe; the cost
+and performance consequences of this scope decision are discussed further
+in Chapter~\ref{chap:methodology}.
+
+An alternative line of work sidesteps pure prompting strategies
+altogether, combining LLMs with external symbolic
+solvers~\cite{heyueya2023symbolic} or equipping them with the ability to
+call external tools~\cite{schick2023toolformer}. This dissertation
+instead evaluates CoT and ToT as prompting-only strategies, without
+external tool or solver integration, to isolate the effect of reasoning
+structure alone.
 
 \section{Mathematical Reasoning Benchmarks}
 \subsection{The MATH Dataset}
-% \cite{hendrycks2021measuring}
+
+The Hendrycks MATH dataset~\cite{hendrycks2021measuring} is a collection
+of competition mathematics problems from several subject areas and five
+levels of difficulty. Each problem comes with a full step-by-step
+solution. This dataset is widely used to test the mathematical reasoning
+of language models because it requires multi-step solutions, not just
+single-step answers. This makes it useful for studying both the final
+answer and the reasoning process. In this dissertation, the Easy and
+Medium difficulty levels of the evaluation dataset are taken from
+Hendrycks MATH, with problems sampled from the four mathematical
+categories used in this study: Algebra, Number Theory, Probability, and
+Combinatorics.
 
 \subsection{AIME as a Benchmark Source}
-% \cite{maa_aime} -- also: why AIME for the Hard tier specifically, and
-% the data-contamination risk of any public competition-math benchmark.
+
+The American Invitational Mathematics Examination (AIME)~\cite{maa_aime}
+is a challenging mathematics competition where problems require several
+steps to reach a specific integer answer. For this dissertation, the Hard
+tier of the evaluation dataset uses only AIME questions, instead of the
+hardest problems from Hendrycks MATH. This choice is based on earlier
+results from this project, which showed a large accuracy gap between AIME
+and Hendrycks questions that were supposed to be equally difficult. This
+suggests that the hardest Hendrycks MATH problems are not directly
+comparable to AIME's. Using only AIME for the Hard tier keeps the
+difficulty level consistent. Like other public mathematics benchmarks,
+AIME questions may pose a data-contamination risk because their problems
+and solutions are publicly available, a concern documented directly for
+a comparable benchmark by Zhang et al.~\cite{zhang2024gsm1k}. Some of
+these or similar problems
+might have appeared in the pretraining data of the models tested. This
+risk is not unique to AIME and remains a limitation in this study, which
+is discussed further in Chapter~\ref{chap:methodology}.
 
 \section{LLM-as-Judge Evaluation}
-% \cite{zheng2023judging} -- and the self-evaluation bias risk this
-% specific project has (Gemini judges Gemini's own responses), and how
-% the neutral-judge validation sample addresses it.
+
+To automatically determine whether a model's reasoning is correct, and
+identify any errors, an evaluator must be able to assess free-text
+mathematical reasoning, not just the final answer. Using a separate LLM as
+the evaluator, known as LLM-as-a-Judge following Zheng et
+al.~\cite{zheng2023judging}, is now common because it can review
+open-ended, free-text responses at a scale and cost that human experts
+cannot easily match.
+
+This approach has a structural risk that is important for this study. Hao
+et al.~\cite{hao2024autorace} point out that when an LLM evaluates
+reasoning, including its own or that of similar models, it may be prone to
+the same errors as the models it judges. For example, it might miss
+logically invalid steps or overlook inconsistencies, just as the original
+model might. This is called self-evaluation bias. In this dissertation,
+this is especially relevant because Gemini is both the main error-judging
+model and one of the models being evaluated, so sometimes Gemini judges
+its own reasoning. To address this, the evaluation process includes an
+independent validation step. In this step, a fixed sample of responses
+judged by Gemini is re-evaluated by a neutral model that is not being
+tested, and agreement between judges is measured using Cohen's kappa.
+Chapter~\ref{chap:methodology} explains the purpose, scope, and completion
+details of this validation step.
 
 \section{Error Analysis of LLM Mathematical Reasoning}
-% Needs an actual literature search -- ask me to help you find and
-% summarise papers that classify or localise LLM reasoning errors
-% specifically (not just accuracy benchmarks), so you can position this
-% thesis's contribution against them.
+
+In addition to the general research on reasoning ability, a separate
+body of work examines benchmark robustness specifically. Mirzadeh et
+al.~\cite{mirzadeh2025symbolic} found that LLM accuracy on grade-school
+arithmetic benchmarks drops when only the numbers in a question are
+changed, and drops even more -- by up to 65 percentage points for some
+models -- when a plausible but irrelevant clause is added. Li et
+al.~\cite{li2024gsmplus} expanded on this with GSM-PLUS. This benchmark
+systematically changes grade-school math questions in several ways to
+see if accuracy holds up when the phrasing differs from what the model
+saw during training. Shi et al.~\cite{shi2023distracted} found a similar
+result: LLMs become less accurate when irrelevant context is added,
+even if the correct answer stays the same. Zhang et
+al.~\cite{zhang2024gsm1k} took a different approach by creating a novel
+benchmark that avoids questions likely memorised from the original
+GSM8K dataset, and they also saw a drop in accuracy compared to the
+original. These results suggest that benchmark accuracy in this area
+may overstate true reasoning ability, which is also a concern noted in
+this dissertation's data-contamination limitation
+(Section~\ref{sec:threats-validity}).
+
+A smaller but growing group of studies focuses on error analysis in LLM
+mathematical reasoning~\cite{wang2025survey}. Sun et
+al.~\cite{sun2025errorclassification} introduce a flexible framework for
+diagnosing errors made by LLMs when solving mathematical word problems,
+identifying both the type of error and the step where it happens. Zhang
+and Graf~\cite{zhang2025mathematical} also study mathematical computation
+and reasoning errors in LLMs, examining what kinds of errors occur and
+how they spread across solution steps. Shrestha et
+al.~\cite{shrestha2025logical} similarly assess logical and arithmetic
+errors across a wide range of numerical inputs, though without a
+comparative multi-model design. These studies show that error type
+and error location are clear, measurable aspects of LLM mathematical
+reasoning failures, and they provide more detailed insights than just
+looking at overall answer accuracy.
+
+This dissertation's RQ1 builds on this general approach of classifying
+error types, applying it in a comparative way that, to the best of the
+author's knowledge, has not been combined in a single study before. The
+same closed error taxonomy is used across three different LLMs, tested
+with two prompting strategies (CoT and ToT) on the same dataset, and a
+Chi-square test of independence is used to check whether the differences
+in error type across models are likely real or due to chance. RQ2 extends
+this by examining, descriptively, whether the length of a model's
+reasoning process relates to whether its final answer is correct.
 
 \section{Summary}
-% Tie the sections above together into "here's the gap, here's what
-% this thesis does about it."
+
+The literature reviewed in this chapter highlights four main points that
+this dissertation builds on. First, Chain-of-Thought and Tree-of-Thought
+are two distinct ways to prompt multi-step reasoning from LLMs: one uses a
+single, externalised sequence, while the other searches through possible
+continuations. In this work, the scope of the Tree-of-Thought method is
+clearly defined, rather than assumed to match the full tree-search
+approach described in earlier studies. Second, Hendrycks MATH and AIME
+are both well-known sources of mathematical problems with varying
+difficulty, but they are not interchangeable. The decision to use AIME
+for the Hard tier in this dissertation is based on data, not just
+preference. Third, using an LLM to judge reasoning generated by another
+LLM is necessary for a project of this size, but it introduces a risk of
+self-evaluation bias. This dissertation aims to measure that risk,
+especially since the main judge model is also being evaluated. Fourth,
+classifying and locating errors in LLM mathematical reasoning are
+important research areas, as shown by Sun et
+al.~\cite{sun2025errorclassification} and Zhang and
+Graf~\cite{zhang2025mathematical}.
+
+However, to the best of the author's knowledge, error-type analysis has
+not previously been combined within a comparative design spanning
+multiple models and multiple prompting strategies, supported by formal
+statistical testing. This dissertation addresses that gap by comparing
+CoT and ToT across three models using the same dataset, classifying
+incorrect answers with a closed error-type taxonomy, and testing for
+significant differences in error type across models with a Chi-square
+test. This approach goes beyond just measuring overall accuracy or
+analysing errors in one setting, aiming for a clearer, more detailed
+understanding of how these models make mistakes in mathematical
+reasoning.

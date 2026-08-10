@@ -1,41 +1,135 @@
 \chapter{Full Dataset Composition}
 \label{app:dataset}
-% Full category x difficulty table, and/or the full AIME question list if
-% your coordinator wants it -- ask me to pull this from
-% docs/methodology.md.
+
+This appendix gives the complete composition of the 131-question
+evaluation dataset described in Section~\ref{sec:dataset}, and lists
+every Hard-tier (AIME) question by ID, category, and ground-truth
+answer.
+
+\begin{table}[h]
+  \centering
+  \caption{Full dataset composition by difficulty tier, category, and source.}
+  \label{tab:dataset-composition}
+  \begin{tabular}{llrl}
+    \toprule
+    Difficulty & Category & N & Source \\
+    \midrule
+    \multirow{4}{*}{Easy} & Algebra & 10 & Hendrycks MATH \\
+     & Combinatorics & 10 & Hendrycks MATH \\
+     & Number Theory & 10 & Hendrycks MATH \\
+     & Probability & 10 & Hendrycks MATH \\
+    \midrule
+    \multirow{4}{*}{Medium} & Algebra & 10 & Hendrycks MATH \\
+     & Combinatorics & 10 & Hendrycks MATH \\
+     & Number Theory & 10 & Hendrycks MATH \\
+     & Probability & 10 & Hendrycks MATH \\
+    \midrule
+    \multirow{4}{*}{Hard} & Algebra & 16 & AIME \\
+     & Combinatorics & 16 & AIME \\
+     & Number Theory & 11 & AIME \\
+     & Probability & 8 & AIME \\
+    \midrule
+    \multicolumn{2}{r}{Total} & 131 & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{dataset_composition_pie.png}
+  \caption{Dataset composition by difficulty tier and category.}
+  \label{fig:dataset-composition-pie}
+\end{figure}
+
+Easy and Medium questions are sampled evenly across the four categories
+(10 per category per tier), all sourced from Hendrycks MATH. The Hard
+tier uses every currently curated, category-labelled AIME question
+available (51 total), which is why its category counts are uneven
+(Section~\ref{sec:threats-validity}). Table~\ref{tab:hard-tier-questions}
+lists every Hard-tier question by ID, category, and ground-truth final
+answer; the full question text is omitted here to avoid reproducing
+lengthy competition problem statements at length, and is available in
+\texttt{data/processed/final\_dataset.xlsx} in the project repository
+(Section~\ref{sec:pipeline}).
+
+\begin{longtable}{lll}
+  \caption{Hard-tier (AIME) questions: ID, category, and ground-truth answer.} \label{tab:hard-tier-questions} \\
+  \toprule
+  Question ID & Category & Answer \\
+  \midrule
+  \endfirsthead
+  \toprule
+  Question ID & Category & Answer \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  ALG\_H\_001 & Algebra & 204 \\
+  ALG\_H\_002 & Algebra & 25 \\
+  ALG\_H\_003 & Algebra & 540 \\
+  ALG\_H\_004 & Algebra & 385 \\
+  ALG\_H\_005 & Algebra & 33 \\
+  ALG\_H\_006 & Algebra & 601 \\
+  ALG\_H\_007 & Algebra & 117 \\
+  ALG\_H\_008 & Algebra & 106 \\
+  ALG\_H\_009 & Algebra & 149 \\
+  ALG\_H\_010 & Algebra & 248 \\
+  ALG\_H\_011 & Algebra & 240 \\
+  ALG\_H\_012 & Algebra & 277 \\
+  ALG\_H\_013 & Algebra & 441 \\
+  ALG\_H\_014 & Algebra & 178 \\
+  ALG\_H\_015 & Algebra & 669 \\
+  ALG\_H\_016 & Algebra & 132 \\
+  COMB\_H\_001 & Combinatorics & 809 \\
+  COMB\_H\_002 & Combinatorics & 73 \\
+  COMB\_H\_003 & Combinatorics & 236 \\
+  COMB\_H\_004 & Combinatorics & 55 \\
+  COMB\_H\_005 & Combinatorics & 902 \\
+  COMB\_H\_006 & Combinatorics & 16 \\
+  COMB\_H\_007 & Combinatorics & 610 \\
+  COMB\_H\_008 & Combinatorics & 907 \\
+  COMB\_H\_009 & Combinatorics & 113 \\
+  COMB\_H\_010 & Combinatorics & 62 \\
+  COMB\_H\_011 & Combinatorics & 396 \\
+  COMB\_H\_012 & Combinatorics & 896 \\
+  COMB\_H\_013 & Combinatorics & 39 \\
+  COMB\_H\_014 & Combinatorics & 107 \\
+  COMB\_H\_015 & Combinatorics & 157 \\
+  COMB\_H\_016 & Combinatorics & 393 \\
+  NT\_H\_001 & Number Theory & 110 \\
+  NT\_H\_002 & Number Theory & 699 \\
+  NT\_H\_003 & Number Theory & 321 \\
+  NT\_H\_004 & Number Theory & 211 \\
+  NT\_H\_005 & Number Theory & 70 \\
+  NT\_H\_006 & Number Theory & 279 \\
+  NT\_H\_007 & Number Theory & 735 \\
+  NT\_H\_008 & Number Theory & 49 \\
+  NT\_H\_009 & Number Theory & 70 \\
+  NT\_H\_010 & Number Theory & 244 \\
+  NT\_H\_011 & Number Theory & 279 \\
+  PROB\_H\_001 & Probability & 116 \\
+  PROB\_H\_002 & Probability & 371 \\
+  PROB\_H\_003 & Probability & 821 \\
+  PROB\_H\_004 & Probability & 204 \\
+  PROB\_H\_005 & Probability & 237 \\
+  PROB\_H\_006 & Probability & 29 \\
+  PROB\_H\_007 & Probability & 190 \\
+  PROB\_H\_008 & Probability & 754 \\
+\end{longtable}
 
 \chapter{Prompt Templates}
 \label{app:prompts}
 % Full verbatim CoT and ToT (branch + selection) prompt templates. Use the
-% \lstlisting or verbatim environment. Ask me for the exact template text
-% from src/prompts/cot.py and src/prompts/tot.py -- these are your own
-% prompt designs, safe to quote directly since you wrote them.
+% \lstlisting or verbatim environment. Pull the exact template text from
+% src/prompts/cot.py and src/prompts/tot.py -- these are original prompt
+% designs, safe to quote directly.
 
 \chapter{Selected Code Listings}
 \label{app:code}
-% Per your outline: "program listings and output." Pick a few
+% Per the outline: "program listings and output." Pick a few
 % representative, well-commented modules (e.g. the answer evaluator, the
-% McNemar/chi-square/Kruskal-Wallis implementations) -- this is YOUR code,
-% written and reviewed by you over the course of the project, so
-% reproducing it here is appropriate. Use \lstinputlisting or the
-% \lstlisting environment with a suitable language setting.
+% McNemar/chi-square test implementations) -- original code written over
+% the course of the project, so reproducing it here is appropriate. Use
+% \lstinputlisting or the \lstlisting environment with a suitable
+% language setting.
 
-\chapter{Additional Tables and Figures}
-\label{app:extra}
-% Any supporting tables/figures that didn't fit the main Results chapter
-% (e.g. the full error-position detail table, per-category breakdowns).
-
-\section{Per-Question Correctness Heatmaps}
-\label{app:correctness-heatmaps}
-% Full detail behind Chapter~\ref{chap:results}'s headline numbers.
-% Figures: outputs/figures/correctness_heatmap_easy_medium.png,
-% correctness_heatmap_hard.png.
-
-\section{Execution Time Figures}
-\label{app:execution-time}
-% Figures: outputs/figures/execution_time_by_difficulty_{cot,tot}.png.
-
-\section{Supplementary Discussion Evidence}
-% Figures supporting Chapter~\ref{chap:discussion}'s interpretation:
-% outputs/figures/step_count_by_question_{cot,tot}.png,
-% error_subtype_word_frequency_hard_by_model.png.

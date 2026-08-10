@@ -1,23 +1,23 @@
 \documentclass[a4paper,11pt,twoside]{report}
 
 % ==========================================================
-% TITLE / AUTHOR -- fill these in yourself (see coordinator's
-% MScThesisTemplate.tex for the pattern this follows).
+% TITLE / AUTHOR
 % ==========================================================
 \newcommand{\theTitle}{A Statistical Study of Mathematical Reasoning Errors in Large Language Models using Tree-of-Thought Reasoning}
 \newcommand{\theShortTitle}{Mathematical Reasoning Errors in LLMs}
 \newcommand{\theAuthor}{Anushree Mahesha}
 \newcommand{\theShortAuthor}{A Mahesha}
-% TODO: confirm your exact Department name, MSc programme title, and
-% supervisor's name/title with your coordinator -- placeholders below.
-\newcommand{\theDepartment}{Department of TODO}
-\newcommand{\theProgramme}{MSc in TODO}
-\newcommand{\theSupervisor}{Dr TODO}
+\newcommand{\theDepartment}{Department of Mathematics and Statistics}
+\newcommand{\theProgramme}{MSc in Data Science and Statistical Learning}
+\newcommand{\theSupervisor}{Meghana Kshirsagar}
+\newcommand{\theSupervisorDept}{Department of Computer Science and Information Systems}
 
-% Bibliography style -- classic bibtex + abbrv, matching the coordinator's
-% template exactly (simpler and faster to compile than biblatex+biber).
+% Bibliography style -- Harvard, numbered in alphabetical-by-author order
+% per the department's required format. Entries are hand-formatted in
+% \begin{thebibliography} near the end of this file rather than generated
+% by BibTeX/abbrv, since that required format (surname, initials, '(Year)
+% Title', Venue) does not match any standard .bst shipped with LaTeX.
 \usepackage{cite}
-\bibliographystyle{abbrv}
 
 % Page style
 \usepackage[a4paper,top=2.5cm,bottom=2.5cm,outer=2.5cm,inner=2.5cm,includeheadfoot]{geometry}
@@ -40,6 +40,8 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
 
 % Graphics -- figures can go in ./Figures/, or point directly at the
 % project's generated outputs so regenerated figures don't need copying.
@@ -83,17 +85,19 @@
     pdffitwindow=true,
     pdftitle={\theTitle},
     pdfauthor={\theShortAuthor},
+    pdfsubject={},
+    pdfkeywords={},
     pdfnewwindow=true,
     colorlinks=true,
-    linkcolor=red,
-    citecolor=red,
+    linkcolor=blue,
+    citecolor=blue,
     filecolor=blue,
     urlcolor=blue,
 }
 
 \title{\theTitle}
 \author{\theAuthor}
-\date{\today}
+\date{14th August 2026}
 
 \begin{document}
 
@@ -102,21 +106,21 @@
 \hypersetup{pageanchor=false}
 \begin{titlepage}
     \quad
-    \vspace{1.25cm}
+    \vspace{0.75cm}
     \begin{center}
         \includegraphics[scale=0.2]{UL_logo.png}
     \end{center}
 
     \begin{center}
-        \vspace{1.5cm}
+        \vspace{1cm}
         \begin{minipage}{0.8\textwidth}
             \begin{center}
                 \LARGE \bfseries \theTitle \\
             \end{center}
         \end{minipage}
 
+        \vspace{2cm}
         \vspace{2.5cm}
-        \vspace{3.5cm}
 
         \begin{minipage}{0.8\textwidth}
             \begin{center}
@@ -125,17 +129,18 @@
                 University of Limerick \\
                 \vspace{0.5cm}
                 \large Supervisor \\
-                \theSupervisor
+                \theSupervisor \\
+                \theSupervisorDept
             \end{center}
         \end{minipage}
 
-        \vspace{2.5cm}
+        \vspace{2cm}
 
         \begin{minipage}{0.8\textwidth}
             \begin{center}
                 \large MSc Thesis \\
                 \textit{\theProgramme} \\
-                \today
+                14th August 2026
             \end{center}
         \end{minipage}
 
@@ -180,7 +185,28 @@ referenced, it has been fully acknowledged.
 \fancyhead[LO,RE]{\bfseries Abstract}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-% TODO: write yourself, last, once Results/Discussion are final. Max 200 words.
+
+Large Language Models (LLMs) are often judged on mathematical reasoning
+benchmarks by final-answer accuracy alone, which reveals little about
+the reasoning process. This dissertation evaluates three LLMs, Gemini
+Flash Lite, GPT-OSS-120B, and Mistral Large, using both
+Chain-of-Thought (CoT) and Tree-of-Thought (ToT) prompting on 131
+mathematics problems from Hendrycks MATH and the American Invitational
+Mathematics Examination (AIME), resulting in 786 responses. The study
+addresses three questions. First, it looks at the types of reasoning
+errors each model makes. Combinatorial Counting Error is the most
+common error for all three models, and a Chi-square test shows no
+significant difference in error types between them. Second, it examines
+the link between reasoning length and correctness. For Mistral Large,
+incorrect Hard-tier answers use more steps than correct ones, while
+Gemini and GPT-OSS-120B do not show this pattern. Third, it tests
+whether ToT improves accuracy compared to CoT. McNemar's Exact Test
+finds that ToT significantly improves accuracy for GPT-OSS-120B and
+Mistral Large, but not for Gemini, even though ToT costs about four
+times more. These findings show that LLMs differ in their reasoning
+errors and in how much they benefit from different prompting
+strategies, and that looking only at accuracy would have missed these
+differences.
 
 \vspace{30pt}
 \emph{\textbf{Keywords:} Large Language Models, Mathematical Reasoning, Chain-of-Thought, Tree-of-Thought, Error Analysis}
@@ -237,12 +263,146 @@ referenced, it has been fully acknowledged.
 \input{chapters/06_discussion_conclusion}
 
 % ==========================================================
-% BIBLIOGRAPHY
+% REFERENCES
 % ==========================================================
 \newpage
-\addcontentsline{toc}{chapter}{Bibliography}
-\fancyhead[RO,LE]{\bfseries Bibliography}
-\bibliography{references}
+\renewcommand{\bibname}{References}
+\addcontentsline{toc}{chapter}{References}
+\fancyhead[RO,LE]{\bfseries References}
+\begin{thebibliography}{99}
+
+\bibitem{brown2020fewshot}
+Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J., Dhariwal, P. et
+al. (2020) `Language Models are Few-Shot Learners', Advances in Neural
+Information Processing Systems (NeurIPS 2020).
+
+\bibitem{cao2023probabilistic}
+Cao, S., Zhang, J., Shi, J., Lv, X., Yao, Z., Tian, Q., Li, J. and Hou,
+L. (2023) `Probabilistic Tree-of-Thought Reasoning for Answering
+Knowledge-Intensive Complex Questions', arXiv preprint arXiv:2311.13982.
+
+\bibitem{chowdhery2022palm}
+Chowdhery, A., Narang, S., Devlin, J., Bosma, M., Mishra, G., Roberts,
+A. et al. (2022) `PaLM: Scaling Language Modeling with Pathways', arXiv
+preprint arXiv:2204.02311.
+
+\bibitem{hao2024autorace}
+Hao, S., Gu, Y., Luo, H., Liu, T., Shao, X., Wang, X., Xie, S., Ma, H.,
+Samavedhi, A., Gao, Q., Wang, Z. and Hu, Z. (2024) `New Evaluation,
+Library, and Analysis of Step-by-Step Reasoning with Large Language
+Models', Conference on Language Modeling (COLM 2024).
+
+\bibitem{heyueya2023symbolic}
+He-Yueya, J., Poesia, G., Wang, R.E. and Goodman, N.D. (2023) `Solving
+Math Word Problems by Combining Language Models With Symbolic Solvers',
+arXiv preprint arXiv:2304.09102.
+
+\bibitem{hendrycks2021measuring}
+Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E.,
+Song, D. and Steinhardt, J. (2021) `Measuring Mathematical Problem
+Solving With the MATH Dataset', Advances in Neural Information
+Processing Systems (NeurIPS 2021), Datasets and Benchmarks Track.
+
+\bibitem{kojima2022zeroshot}
+Kojima, T., Gu, S.S., Reid, M., Matsuo, Y. and Iwasawa, Y. (2022) `Large
+Language Models are Zero-Shot Reasoners', Advances in Neural Information
+Processing Systems (NeurIPS 2022).
+
+\bibitem{li2024gsmplus}
+Li, Q., Cui, L., Zhao, X., Kong, L. and Bi, W. (2024) `GSM-PLUS: A
+Comprehensive Benchmark for Evaluating the Robustness of LLMs as
+Mathematical Problem Solvers', arXiv preprint arXiv:2402.19255.
+
+\bibitem{li2024serial}
+Li, Z., Liu, H., Zhou, D. and Ma, T. (2024) `Chain of Thought Empowers
+Transformers to Solve Inherently Serial Problems', arXiv preprint
+arXiv:2402.12875.
+
+\bibitem{long2023tot}
+Long, J. (2023) `Large Language Model Guided Tree-of-Thought', arXiv
+preprint arXiv:2305.08291.
+
+\bibitem{maa_aime}
+Mathematical Association of America (2026) `American Invitational
+Mathematics Examination (AIME)'. Available at:
+\url{https://maa.org/maa-invitational-competitions/} (Accessed: 2026).
+
+\bibitem{mirzadeh2025symbolic}
+Mirzadeh, I., Alizadeh, K., Shahrokhi, H., Tuzel, O., Bengio, S. and
+Farajtabar, M. (2025) `GSM-Symbolic: Understanding the Limitations of
+Mathematical Reasoning in Large Language Models', International
+Conference on Learning Representations (ICLR 2025).
+
+\bibitem{schick2023toolformer}
+Schick, T., Dwivedi-Yu, J., Dess\`i, R., Raileanu, R., Lomeli, M.,
+Hambro, E., Zettlemoyer, L., Cancedda, N. and Scialom, T. (2023)
+`Toolformer: Language Models Can Teach Themselves to Use Tools',
+Advances in Neural Information Processing Systems (NeurIPS 2023).
+
+\bibitem{shi2023distracted}
+Shi, F., Chen, X., Misra, K., Scales, N., Dohan, D., Chi, E., Sch\"arli,
+N. and Zhou, D. (2023) `Large Language Models Can Be Easily Distracted
+by Irrelevant Context', Proceedings of the 40th International
+Conference on Machine Learning (ICML 2023).
+
+\bibitem{shrestha2025logical}
+Shrestha, S., Kim, M. and Ross, K. (2025) `Mathematical Reasoning in
+Large Language Models: Assessing Logical and Arithmetic Errors across
+Wide Numerical Ranges', arXiv preprint arXiv:2502.08680.
+
+\bibitem{sun2025errorclassification}
+Sun, Y., Yin, Z., Huang, X., Qiu, X. and Zhao, H. (2025) `Error
+Classification of Large Language Models on Math Word Problems: A
+Dynamically Adaptive Framework', arXiv preprint arXiv:2501.15581.
+
+\bibitem{wang2025survey}
+Wang, P-Y., Liu, T-S., Wang, C., Wang, Y-D., Yan, S., Jia, C-X., Liu,
+X-H., Chen, X-W., Xu, J-C., Li, Z. and Yu, Y. (2025) `A Survey on Large
+Language Models for Mathematical Reasoning', arXiv preprint
+arXiv:2506.08446.
+
+\bibitem{wang2023selfconsistency}
+Wang, X., Wei, J., Schuurmans, D., Le, Q., Chi, E.H., Narang, S.,
+Chowdhery, A. and Zhou, D. (2023) `Self-Consistency Improves Chain of
+Thought Reasoning in Language Models', International Conference on
+Learning Representations (ICLR 2023).
+
+\bibitem{wei2022chain}
+Wei, J., Wang, X., Schuurmans, D., Bosma, M., Ichter, B., Xia, F., Chi,
+E., Le, Q. and Zhou, D. (2022) `Chain-of-Thought Prompting Elicits
+Reasoning in Large Language Models', Advances in Neural Information
+Processing Systems (NeurIPS 2022).
+
+\bibitem{yao2023tree}
+Yao, S., Yu, D., Zhao, J., Shafran, I., Griffiths, T.L., Cao, Y. and
+Narasimhan, K. (2023) `Tree of Thoughts: Deliberate Problem Solving with
+Large Language Models', Advances in Neural Information Processing
+Systems (NeurIPS 2023).
+
+\bibitem{zhang2024gsm1k}
+Zhang, H., Da, J., Lee, D., Robinson, V., Wu, C., Song, W., Zhao, T.,
+Raja, P., Zhuang, C., Slack, D., Lyu, Q., Hendryx, S., Kaplan, R.,
+Lunati, M. and Yue, S. (2024a) `A Careful Examination of Large Language
+Model Performance on Grade School Arithmetic', Advances in Neural
+Information Processing Systems (NeurIPS 2024) Track on Datasets and
+Benchmarks.
+
+\bibitem{zhang2025mathematical}
+Zhang, L. and Graf, E.A. (2025) `Mathematical Computation and Reasoning
+Errors by Large Language Models', arXiv preprint arXiv:2508.09932.
+
+\bibitem{zhang2024preference}
+Zhang, X., Du, C., Pang, T., Liu, Q., Gao, W. and Lin, M. (2024b) `Chain
+of Preference Optimization: Improving Chain-of-Thought Reasoning in
+LLMs', Advances in Neural Information Processing Systems (NeurIPS 2024).
+
+\bibitem{zheng2023judging}
+Zheng, L., Chiang, W-L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., Lin,
+Z., Li, Z., Li, D., Xing, E.P., Zhang, H., Gonzalez, J.E. and Stoica, I.
+(2023) `Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena',
+Advances in Neural Information Processing Systems (NeurIPS 2023).
+
+\end{thebibliography}
 
 % ==========================================================
 % APPENDICES -- calculations, program listings, output, per the MSc outline.
