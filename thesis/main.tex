@@ -3,7 +3,7 @@
 % ==========================================================
 % TITLE / AUTHOR
 % ==========================================================
-\newcommand{\theTitle}{A Statistical Study of Mathematical Reasoning Errors in Large Language Models using Tree-of-Thought Reasoning}
+\newcommand{\theTitle}{A Statistical Study of Mathematical Reasoning Errors in Large Language Models}
 \newcommand{\theShortTitle}{Mathematical Reasoning Errors in LLMs}
 \newcommand{\theAuthor}{Anushree Mahesha}
 \newcommand{\theShortAuthor}{A Mahesha}
@@ -43,6 +43,20 @@
 \usepackage{multirow}
 \usepackage{longtable}
 \usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  commentstyle=\color{gray},
+  keywordstyle=\color{blue},
+  stringstyle=\color{teal},
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+}
 
 % Graphics -- figures can go in ./Figures/, or point directly at the
 % project's generated outputs so regenerated figures don't need copying.
@@ -159,6 +173,43 @@
 \hypersetup{pageanchor=true}
 \setcounter{page}{1}
 \pagenumbering{roman}
+
+% ---------- Declaration ----------
+\fancyhead[L]{\bfseries Declaration}
+\chapter*{Declaration}
+\addcontentsline{toc}{chapter}{Declaration}
+I hereby declare that this dissertation entitled \textbf{``A Statistical
+Study of Mathematical Reasoning Errors in Large Language Models''} is my
+original work, carried out as part of the requirements for the award of
+the \textbf{Master's in Data Science and Statistical Learning} at the
+\textbf{University of Limerick}. All sources, materials, and ideas used
+in this dissertation have been appropriately acknowledged and
+referenced. I confirm that this work has not been submitted, either in
+whole or in part, for any other academic qualification. I take full
+responsibility for the originality and academic integrity of the work
+presented in this dissertation.
+
+\vspace{2cm}
+\noindent Signed: \underline{\hspace{6cm}} \quad Date: \underline{\hspace{4cm}}
+
+\newpage
+
+% ---------- Acknowledgements ----------
+\fancyhead[L]{\bfseries Acknowledgements}
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+I would like to express my sincere gratitude to my supervisor,
+\textbf{Meghana Kshirsagar}, for their invaluable guidance, continuous
+support, and constructive feedback throughout the completion of this
+dissertation. I am deeply grateful to the \textbf{University of
+Limerick} and the faculty of the \textbf{Master's in Data Science and
+Statistical Learning} for providing me with the academic knowledge and
+supportive learning environment necessary to undertake this research. I
+would also like to acknowledge the faculty members and staff who
+provided their assistance and encouragement throughout my academic
+journey.
+
+\newpage
 
 % ---------- Abstract (≤200 words per the MSc outline) ----------
 \fancyhead[L]{\bfseries Abstract}

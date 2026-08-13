@@ -117,19 +117,21 @@ lengthy competition problem statements at length, and is available in
   PROB\_H\_008 & Probability & 754 \\
 \end{longtable}
 
-\chapter{Prompt Templates}
-\label{app:prompts}
-% Full verbatim CoT and ToT (branch + selection) prompt templates. Use the
-% \lstlisting or verbatim environment. Pull the exact template text from
-% src/prompts/cot.py and src/prompts/tot.py -- these are original prompt
-% designs, safe to quote directly.
-
 \chapter{Selected Code Listings}
 \label{app:code}
-% Per the outline: "program listings and output." Pick a few
-% representative, well-commented modules (e.g. the answer evaluator, the
-% McNemar/chi-square test implementations) -- original code written over
-% the course of the project, so reproducing it here is appropriate. Use
-% \lstinputlisting or the \lstlisting environment with a suitable
-% language setting.
+
+This appendix reproduces two representative modules from the project's
+source code: the automatic answer evaluator
+(Section~\ref{sec:answer-eval}), and the statistical test
+implementations used throughout Chapter~\ref{chap:results}. The full
+source code is available at the repository given in
+Section~\ref{sec:pipeline}.
+
+\section{Answer Evaluator}
+
+\lstinputlisting[language=Python, caption={\texttt{src/evaluation/answer\_evaluator.py}}]{CodeListings/answer_evaluator.py}
+
+\section{Statistical Test Implementations}
+
+\lstinputlisting[language=Python, caption={\texttt{src/utils/stats.py}}]{CodeListings/stats.py}
 
