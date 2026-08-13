@@ -2,13 +2,9 @@ from typing import Sequence, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.stats import binomtest, chi2_contingency, fisher_exact, kruskal, mannwhitneyu
+from scipy.stats import binomtest, chi2_contingency, fisher_exact, mannwhitneyu
 
-
-# ==========================================================
 # RQ3: McNemar's exact test (paired CoT vs ToT accuracy per model)
-# ==========================================================
-
 def mcnemar_exact(b: int, c: int) -> dict:
     n = b + c
 
@@ -46,10 +42,7 @@ def paired_accuracy_discordant_counts(
 
     return b, c
 
-
 # chi-square / Fisher's exact test of independence
-
-
 def independence_test(contingency_table: pd.DataFrame) -> dict:
 
     table = contingency_table.to_numpy()
@@ -75,20 +68,6 @@ def independence_test(contingency_table: pd.DataFrame) -> dict:
         "caution": min_expected < 5,  # flag, don't silently hide, the approximation getting shaky
     }
 
-
-# distribution comparison (normalized error step location)
-
-def kruskal_wallis(*groups: Sequence[float]) -> dict:
-    groups = [g for g in groups if len(g) > 0]
-
-    if len(groups) < 2:
-        return {"statistic": None, "p_value": None, "note": "fewer than 2 non-empty groups"}
-
-    statistic, p_value = kruskal(*groups)
-
-    return {"statistic": statistic, "p_value": p_value, "significant": p_value < 0.05}
-
-
 def mannwhitney_test(correct: Sequence[float], incorrect: Sequence[float]) -> dict:
     correct = [x for x in correct if pd.notna(x)]
     incorrect = [x for x in incorrect if pd.notna(x)]
@@ -106,7 +85,6 @@ def mannwhitney_test(correct: Sequence[float], incorrect: Sequence[float]) -> di
         "significant": p_value < 0.05,
     }
 
-
 def logistic_regression(df: pd.DataFrame, formula: str) -> dict:
     import statsmodels.formula.api as smf
 
@@ -120,9 +98,7 @@ def logistic_regression(df: pd.DataFrame, formula: str) -> dict:
         "pseudo_r2": fit.prsquared,
     }
 
-
 # CONFIDENCE INTERVALS
-
 def wilson_ci(successes: int, n: int, confidence: float = 0.95) -> dict:
 
     if n == 0:
@@ -142,34 +118,4 @@ def wilson_ci(successes: int, n: int, confidence: float = 0.95) -> dict:
         "lower": max(0.0, center - margin),
         "upper": min(1.0, center + margin),
         "n": n,
-    }
-
-
-def bootstrap_ci(
-    data: Sequence[float],
-    statistic_fn=np.mean,
-    n_bootstrap: int = 2000,
-    confidence: float = 0.95,
-    seed: int = 25116096,
-) -> dict:
-
-    data = np.asarray(data)
-
-    if len(data) == 0:
-        return {"estimate": None, "lower": None, "upper": None}
-
-    rng = np.random.default_rng(seed)
-
-    boot_stats = [
-        statistic_fn(rng.choice(data, size=len(data), replace=True))
-        for _ in range(n_bootstrap)
-    ]
-
-    alpha = 1 - confidence
-
-    return {
-        "estimate": statistic_fn(data),
-        "lower": float(np.percentile(boot_stats, 100 * alpha / 2)),
-        "upper": float(np.percentile(boot_stats, 100 * (1 - alpha / 2))),
-        "n": len(data),
     }

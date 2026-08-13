@@ -1,8 +1,7 @@
 import math
 import re
 from fractions import Fraction
-
-from sympy import simplify, sympify  # noqa: F401 (sympify kept for parity/back-compat)
+from sympy import simplify, sympify
 from sympy.parsing.sympy_parser import (
     parse_expr,
     standard_transformations,
@@ -15,10 +14,8 @@ transformations = (
 )
 
 def normalize_answer(answer):
-
     if answer is None:
         return ""
-
     answer = str(answer).strip().lower()
 
     for token in ["```", "**", "__"]:
@@ -29,10 +26,7 @@ def normalize_answer(answer):
 
     answer = answer.replace(r"\(", "")
     answer = answer.replace(r"\)", "")
-    # LaTeX escapes a literal percent sign as "\%" (plain "%" starts a
-    # comment) -- left as-is, "10\%" fails the percent-fullmatch check below
-    # (which requires digits immediately followed by "%") and never gets
-    # converted to 0.1, so it stops comparing equal to a plain "10%".
+
     answer = answer.replace(r"\%", "%")
 
     answer = re.sub(r"\\text\{([^{}]*)\}", r"\1", answer)
@@ -43,9 +37,7 @@ def normalize_answer(answer):
         r"\1/\2",
         answer,
     )
-    # Brace-less LaTeX shorthand, e.g. "\frac12" == "\frac{1}{2}" -- see
-    # src/parser/response_parser.py's clean_answer() for the same fix and
-    # why it matters (unconverted, adjacent digits misread as one number).
+
     answer = re.sub(r"\\d?frac(\w)(\w)", r"\1/\2", answer)
 
     answer = answer.replace("^", "**")
@@ -61,10 +53,6 @@ def normalize_answer(answer):
 
 def to_number(value):
 
-    # Mixed numbers ("2 1/3") must be checked BEFORE normalize_answer, which
-    # strips all whitespace and would otherwise collapse "2 1/3" into "21/3"
-    # — silently misparsed as the plain fraction 21/3 instead of 2 + 1/3.
-    # (This was dead code in the prior evaluator for exactly this reason.)
     if value is not None:
 
         raw = str(value).strip().lower().replace(",", "").replace("$", "")
@@ -95,7 +83,6 @@ def to_number(value):
 
     return None
 
-
 def compare_numeric(gt, pred):
 
     gt_num = to_number(gt)
@@ -105,7 +92,6 @@ def compare_numeric(gt, pred):
         return False
 
     return math.isclose(gt_num, pred_num, rel_tol=1e-9, abs_tol=1e-9)
-
 
 def compare_symbolic(gt, pred):
 
@@ -121,12 +107,10 @@ def compare_symbolic(gt, pred):
 
     except Exception:
         return False
-
-
+    
 def compare_text(gt, pred):
 
     return normalize_answer(gt) == normalize_answer(pred)
-
 
 def is_correct(gt, pred):
 
@@ -140,7 +124,6 @@ def is_correct(gt, pred):
         return True
 
     return False
-
 
 def evaluate_response(ground_truth, prediction):
 
