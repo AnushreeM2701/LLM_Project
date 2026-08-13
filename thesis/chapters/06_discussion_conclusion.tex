@@ -208,8 +208,9 @@ selection step. The RQ3 result -- that this simpler approach improves
 accuracy for two models but not Gemini -- applies only to this limited
 version, not to all tree-search-based prompting. It is still unclear
 whether the full iterative search from Yao et al. would help Gemini or
-further benefit the other models. Wang et al.'s Self-Consistency
-\cite{wang2023selfconsistency}, which combines independently sampled CoT
+further benefit the other models. Wang et al.'s
+Self-Consistency~\cite{wang2023selfconsistency}, which combines
+independently sampled CoT
 paths by majority vote, gives a similar warning: more reasoning does not
 always mean more reliable answers if the same error appears in each
 sample. The RQ2 finding here, that Mistral Large's longer,
