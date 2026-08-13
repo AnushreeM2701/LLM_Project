@@ -1,0 +1,19 @@
+Model,Prompt,Difficulty,Mean Correct,Median Correct,Mean Incorrect,Median Incorrect,n_correct,n_incorrect,statistic,p_value,significant
+gemini,cot,Easy,4.5,5.0,4.5,4.5,38,2,38.5,1.0,False
+gemini,cot,Medium,5.125,5.0,,,40,0,,,
+gemini,cot,Hard,8.0,7.5,6.65,6.0,20,20,297.0,0.008033128984212788,True
+gemini,tot,Easy,5.078947368421052,5.0,4.5,4.5,38,2,44.0,0.7230481546808463,False
+gemini,tot,Medium,5.82051282051282,5.0,7.0,7.0,39,1,7.0,0.28823147111723635,False
+gemini,tot,Hard,7.95,7.5,8.8,8.5,20,20,162.0,0.30417410051587057,False
+groq,cot,Easy,3.675,3.0,,,40,0,,,
+groq,cot,Medium,4.175,4.0,,,40,0,,,
+groq,cot,Hard,6.277777777777778,6.0,6.545454545454546,6.0,18,22,208.5,0.7827131339597045,False
+groq,tot,Easy,3.55,3.0,,,40,0,,,
+groq,tot,Medium,3.8,4.0,,,40,0,,,
+groq,tot,Hard,5.615384615384615,5.0,5.5,5.5,26,14,172.5,0.7948979502515741,False
+mistral,cot,Easy,4.564102564102564,4.0,5.0,5.0,39,1,11.0,0.47429644803858073,False
+mistral,cot,Medium,5.5,4.0,,,40,0,,,
+mistral,cot,Hard,7.6,7.0,15.84,10.0,15,25,125.0,0.08248798151546516,False
+mistral,tot,Easy,6.6923076923076925,5.0,4.0,4.0,39,1,31.0,0.3298266903753485,False
+mistral,tot,Medium,6.525,5.0,,,40,0,,,
+mistral,tot,Hard,16.0,8.0,16.5,12.5,22,18,176.5,0.5674761438174342,False

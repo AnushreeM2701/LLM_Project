@@ -56,12 +56,15 @@ Source: `config/config.py` (MODELS section), `src/models/groq_gptoss.py`,
 
 ## Hard tier: AIME-only, and why
 
-An earlier iteration included Hendrycks MATH Level-5 alongside AIME in the
-Hard tier. Piloting showed roughly an 80-percentage-point accuracy gap
-between AIME-Hard and Hendrycks-Hard under identical models and prompting
-— evidence the two sources do not measure the same construct despite
-sharing a difficulty label. The Hard tier was restricted to AIME only as a
-result.
+The Hard tier uses AIME questions only, not Hendrycks MATH Level 5. AIME is
+a single, consistent competition-mathematics source with a uniform integer
+answer format (0--999), keeping answer-parsing and grading consistent
+across the tier. Hendrycks MATH Level 5 is a separate item bank with a
+different answer format (including fractional answers) and no independent
+validation that its internal "Level 5" label represents the same difficulty
+as an AIME problem. Mixing the two under one difficulty label would risk
+treating non-comparable item banks as equivalent, so the Hard tier was
+restricted to AIME only.
 
 Source: `src/dataset/freeze_dataset.py`.
 

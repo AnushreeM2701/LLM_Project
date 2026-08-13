@@ -11,6 +11,7 @@ import pandas as pd
 from config.config import FIGURES_DIR, TABLES_DIR, MODEL_NAMES, PROMPT_TYPES, DIFFICULTIES
 from src.utils.io import load_results
 from src.analysis.question_execution_time import hard_tier_question_pool, MODEL_LABELS
+from src.utils.stats import mannwhitney_test, logistic_regression
 
 GOOD = "#0ca30c"
 CRITICAL = "#d03b3b"
@@ -52,6 +53,78 @@ def step_count_summary() -> pd.DataFrame:
                         "Mean Step Count": subset["Step Count"].mean(),
                         "Median Step Count": subset["Step Count"].median(),
                     })
+
+    return pd.DataFrame(rows)
+
+
+def step_count_significance() -> pd.DataFrame:
+    """Model x Prompt x Difficulty: Mann-Whitney U test, correct vs. incorrect step counts."""
+
+    df = load_results()
+    df = df.copy()
+    df["Answer Correct"] = df["Answer Correct"].astype(str).str.lower() == "true"
+    df["Step Count"] = pd.to_numeric(df["Step Count"], errors="coerce")
+
+    pool = hard_tier_question_pool(df)
+    df = df[(df["Difficulty"] != "Hard") | (df["Question ID"].isin(pool))]
+
+    rows = []
+    for model in MODEL_NAMES:
+        for prompt in PROMPT_TYPES:
+            for difficulty in DIFFICULTIES:
+                subset = df[
+                    (df["Model"] == model)
+                    & (df["Prompt"] == prompt)
+                    & (df["Difficulty"] == difficulty)
+                ]
+                correct = subset[subset["Answer Correct"]]["Step Count"]
+                incorrect = subset[~subset["Answer Correct"]]["Step Count"]
+
+                result = mannwhitney_test(correct, incorrect)
+                rows.append({
+                    "Model": model,
+                    "Prompt": prompt,
+                    "Difficulty": difficulty,
+                    "Mean Correct": correct.mean(),
+                    "Median Correct": correct.median(),
+                    "Mean Incorrect": incorrect.mean(),
+                    "Median Incorrect": incorrect.median(),
+                    **result,
+                })
+
+    return pd.DataFrame(rows)
+
+
+def step_count_logistic_regression() -> pd.DataFrame:
+    """Model x Prompt, Hard tier only: logistic regression of correctness on step count."""
+
+    df = load_results()
+    df = df.copy()
+    df["Correct"] = (df["Answer Correct"].astype(str).str.lower() == "true").astype(int)
+    df["StepCount"] = pd.to_numeric(df["Step Count"], errors="coerce")
+
+    pool = hard_tier_question_pool(df)
+    hard = df[(df["Difficulty"] == "Hard") & (df["Question ID"].isin(pool))]
+    hard = hard.dropna(subset=["StepCount"])
+
+    rows = []
+    for model in MODEL_NAMES:
+        for prompt in PROMPT_TYPES:
+            subset = hard[(hard["Model"] == model) & (hard["Prompt"] == prompt)]
+
+            result = logistic_regression(subset, "Correct ~ StepCount")
+
+            rows.append({
+                "Model": model,
+                "Prompt": prompt,
+                "Difficulty": "Hard",
+                "N": result["n"],
+                "StepCount Coef (log-odds)": result["coef"].get("StepCount"),
+                "StepCount Odds Ratio": result["odds_ratio"].get("StepCount"),
+                "StepCount p-value": result["p_value"].get("StepCount"),
+                "StepCount Significant": result["p_value"].get("StepCount") < 0.05,
+                "Pseudo R2": result["pseudo_r2"],
+            })
 
     return pd.DataFrame(rows)
 
@@ -155,6 +228,18 @@ def run():
     summary.to_csv(path, index=False)
     print(f"Saved -> {path}")
     print(summary)
+
+    significance = step_count_significance()
+    sig_path = os.path.join(TABLES_DIR, "rq2_step_count_mannwhitney.csv")
+    significance.to_csv(sig_path, index=False)
+    print(f"Saved -> {sig_path}")
+    print(significance)
+
+    logistic = step_count_logistic_regression()
+    logistic_path = os.path.join(TABLES_DIR, "rq2_step_count_logistic_regression.csv")
+    logistic.to_csv(logistic_path, index=False)
+    print(f"Saved -> {logistic_path}")
+    print(logistic)
 
     df = load_results()
     question_pool = {

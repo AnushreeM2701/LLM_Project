@@ -2,7 +2,7 @@ from typing import Sequence, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.stats import binomtest, chi2_contingency, fisher_exact, kruskal
+from scipy.stats import binomtest, chi2_contingency, fisher_exact, kruskal, mannwhitneyu
 
 
 # ==========================================================
@@ -87,6 +87,39 @@ def kruskal_wallis(*groups: Sequence[float]) -> dict:
     statistic, p_value = kruskal(*groups)
 
     return {"statistic": statistic, "p_value": p_value, "significant": p_value < 0.05}
+
+
+def mannwhitney_test(correct: Sequence[float], incorrect: Sequence[float]) -> dict:
+    correct = [x for x in correct if pd.notna(x)]
+    incorrect = [x for x in incorrect if pd.notna(x)]
+
+    if len(correct) == 0 or len(incorrect) == 0:
+        return {"n_correct": len(correct), "n_incorrect": len(incorrect), "statistic": None, "p_value": None, "significant": None}
+
+    statistic, p_value = mannwhitneyu(correct, incorrect, alternative="two-sided")
+
+    return {
+        "n_correct": len(correct),
+        "n_incorrect": len(incorrect),
+        "statistic": statistic,
+        "p_value": p_value,
+        "significant": p_value < 0.05,
+    }
+
+
+def logistic_regression(df: pd.DataFrame, formula: str) -> dict:
+    import statsmodels.formula.api as smf
+
+    fit = smf.logit(formula, data=df).fit(disp=0)
+
+    return {
+        "n": int(fit.nobs),
+        "coef": fit.params.to_dict(),
+        "odds_ratio": np.exp(fit.params).to_dict(),
+        "p_value": fit.pvalues.to_dict(),
+        "pseudo_r2": fit.prsquared,
+    }
+
 
 # CONFIDENCE INTERVALS
 

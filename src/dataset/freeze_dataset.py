@@ -197,7 +197,7 @@ def composition_table_markdown(dataset: pd.DataFrame) -> str:
     lines.append("")
     lines.append(
         "Hard tier is **AIME-only** (Hendrycks Level-5 excluded — see "
-        "`docs/limitations.md` for the empirical justification). Category "
+        "`docs/limitations.md` for the rationale). Category "
         "counts within Hard are **unbalanced by design**: Probability caps "
         "out at 8 available curated AIME questions, and the other "
         "categories are not trimmed to match, to preserve statistical "
