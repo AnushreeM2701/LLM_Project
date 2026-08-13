@@ -1,8 +1,5 @@
-\chapter{Statistical Methodology}
+\chapter{Methodology}
 \label{chap:methodology}
-
-% TODO: for each statistical test below, confirm assumptions, null
-% hypothesis, and justification for that RQ before finalising.
 
 This chapter explains the methods used in this study. It describes how
 the evaluation dataset was built, which Large Language Models were chosen
@@ -19,7 +16,7 @@ three difficulty levels (Easy, Medium, Hard) and four categories: Algebra,
 Number Theory, Probability, and Combinatorics. Table~\ref{tab:composition}
 lists the exact breakdown.
 
-\begin{table}[h]
+\begin{table}[H]
   \centering
   \caption{Dataset composition by category and difficulty level.}
   \label{tab:composition}
@@ -37,75 +34,105 @@ lists the exact breakdown.
   \end{tabular}
 \end{table}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{dataset_composition_pie.png}
+  \caption{Dataset composition by difficulty tier and category.}
+  \label{fig:dataset-composition-pie-methodology}
+\end{figure}
+
 The Easy and Medium levels come from Hendrycks MATH, with exactly 10
 questions per category in each level (using seed 25116096). These match
 Hendrycks Levels 1--2 for Easy and Levels 3--4 for Medium. The Hard level
 uses only questions from AIME.
 
-The choice to use only AIME questions for the Hard level, instead of also
-including Hendrycks MATH Level 5, was based on pilot testing. Earlier,
-both AIME and Hendrycks Level-5 questions were included, but pilot
-results showed about an 80 percentage point difference in accuracy
-between them under the same models and prompts. This suggested the two
-sources were not measuring the same thing, even though they had the same
-difficulty label, so only AIME questions were kept for the Hard level.
+The Hard level uses AIME questions only, rather than also including
+Hendrycks MATH Level 5. AIME is a single, consistent competition-mathematics
+source with a uniform integer answer format (0--999), which keeps
+answer-parsing and grading consistent across the whole Hard tier. Hendrycks
+MATH Level 5 is a separate item bank with a different answer format
+(including fractional answers) and no independent validation that its
+internal ``Level 5'' label represents the same difficulty as an AIME
+problem. Mixing the two sources under one difficulty label would risk
+treating non-comparable item banks as equivalent, so the Hard level was
+restricted to AIME only.
 
-The number of questions in each Hard-level category is intentionally
-uneven. Probability is limited to 8 questions because that is all the
+The 51 Hard-level questions were drawn from six AIME contests: 2024 I,
+2024 II, 2025 I, 2025 II, 2026 I, and 2026 II. The number of questions in
+each Hard-level category is intentionally uneven, reflecting how many
+questions of each category were available and labelled across these six
+contests. Probability is limited to 8 questions because that is all the
 AIME Probability questions available and labelled for this project. The
 other three categories were not reduced to match. Reducing them would
 have meant losing useful data without any real benefit, so the imbalance
 is handled as a covariate in the analysis instead of forcing equal
 numbers.
 
+For most analyses in this study, the Hard tier is further restricted to
+a fixed, seeded random sample of 40 of its 51 questions (seed 25116096),
+matching the fixed size of the Easy and Medium tiers (40 questions each).
+This gives a consistent, equal-sized pool of 40 questions per difficulty
+tier -- 120 questions in total, so that no single tier's larger
+question count disproportionately influences comparisons across tiers.
+This balanced 120-question pool is used throughout this dissertation's
+analyses unless otherwise stated. The one deliberate exception is the
+per-question correctness matrix (Section~\ref{sec:question-correctness}),
+which uses the full 51 Hard-tier questions (131 questions in total) to
+show every curated question rather than a sample of them.
+
 \section{Models}
 \label{sec:models}
 
-Three Large Language Models are evaluated in this study: Gemini Flash
-Lite (\texttt{gemini-flash-lite-latest}, resolving to
+This study evaluates three large language models: Gemini Flash Lite
+(\texttt{gemini-flash-lite-latest}, resolving to
 \texttt{gemini-3.5-flash-lite}), GPT-OSS-120B (\texttt{openai/gpt-oss-120b},
 via Groq), and Mistral Large (\texttt{mistral-large-latest}, resolving to
-Mistral Large 3, \texttt{mistral-large-2512}). All three are free-tier
-models accessed through their respective providers' APIs.
+Mistral Large 3, \texttt{mistral-large-2512}). Each model is accessed via
+its provider's free-tier API.
 
-Gemini was fixed as one of the three models per a supervisor requirement.
-Groq and Mistral's specific models were selected after an earlier review
-found that the originally planned Llama-3.3-70B (Groq) and Mistral Small
-performed poorly on AIME-level problems, and after confirming that
-Llama-4-Maverick/Scout -- the originally planned replacement on Groq --
-had been deprecated by Groq. GPT-OSS-120B was selected as Groq's own
-recommended migration target for the deprecated models.
+Gemini was included to ensure diversity among model providers. Groq hosts
+open-weight models, originally from Meta's Llama family and later
+OpenAI's GPT-OSS, while Mistral AI offers its proprietary Mistral-family
+models. Including Gemini introduces a model from Google's family,
+avoiding reliance on adjacent open-weight or single-vendor lineages. The
+specific Groq and Mistral models were chosen after an earlier review
+determined that the initially planned Llama-3.3-70B (Groq) and Mistral
+Small performed inadequately on AIME-level problems. Additionally,
+Llama-4-Maverick/Scout, the intended replacement on Groq, was deprecated.
+GPT-OSS-120B was selected as Groq's recommended migration target for
+these deprecated models.
 
-Every model is run with temperature set to 0, so responses are
-deterministic given the same prompt. Two of the three models -- Gemini
-and GPT-OSS-120B -- expose an internal ``thinking effort'' or ``reasoning
-effort'' control; both are pinned to their lowest available setting
+All models are run with temperature set to 0, ensuring deterministic
+responses for identical prompts. Two of the three models, Gemini and
+GPT-OSS-120B, provide an internal control for ``thinking effort'' or
+``reasoning effort.'' Both are set to their lowest available settings
 (Gemini: \texttt{thinking\_level = "minimal"}; GPT-OSS-120B:
-\texttt{reasoning\_effort = "low"}) and held constant across both
-Chain-of-Thought and Tree-of-Thought conditions. This matters
-specifically for RQ3: if this setting were left to vary, a difference in
-accuracy between CoT and ToT could reflect a changing internal reasoning
-budget rather than the prompting strategy itself. Pinning it to a fixed,
-minimum value is a controlled confound, not an eliminated one -- it does
-not guarantee zero internal reasoning is happening regardless of the
-prompt, only that whatever internal reasoning occurs is held constant
-across conditions. Mistral Large has no equivalent control exposed and is
-used as a standard instruct model throughout.
+\texttt{reasoning\_effort = "low"}) and remain constant across both
+Chain-of-Thought and Tree-of-Thought conditions. This control is
+particularly relevant for RQ3. If this setting were allowed to vary,
+differences in accuracy between Chain-of-Thought and Tree-of-Thought
+could result from changes in internal reasoning budget rather than the
+prompting strategy. Fixing the setting at its minimum value controls for
+this confound, though it does not eliminate it entirely. This approach
+does not guarantee the absence of internal reasoning, but ensures that
+any such reasoning remains consistent across conditions. Mistral Large
+does not expose an equivalent control and is used as a standard instruct
+model throughout.
 
 \section{Prompting Strategies}
 \label{sec:prompting}
 \subsection{Chain-of-Thought}
 
-In the Chain-of-Thought setup, the model answers each question with just
-one call. It receives the problem and is told to explain its reasoning
-step by step, finishing with a final answer in a set format.
+In the Chain-of-Thought setup, the model answers each question in a
+single call. The model receives the problem and is instructed to explain
+its reasoning step by step, concluding with a final answer in a
+specified format.
 
-This is the usual single-pass Chain-of-Thought design: one call produces
-one reasoning process and one final answer, all generated at temperature
-0 to keep results consistent. The prompt template itself (the full
-verbatim text is given in Appendix~\ref{app:prompts}) fixes the output
-format so that every response, regardless of model, can be parsed the
-same way:
+This approach follows the standard single-pass Chain-of-Thought design,
+in which one call produces a complete reasoning process and a final
+answer. All outputs are generated at temperature 0 to guarantee
+consistency. The prompt template standardises the output format,
+enabling uniform parsing of responses among different models:
 
 \begin{quote}
 \ttfamily\small
@@ -126,29 +153,32 @@ Problem:\\
 \end{quote}
 
 \subsection{Tree-of-Thought Design}
+\label{sec:tot-design}
 
-In the Tree-of-Thought setup, the model makes three separate calls to
-create independent candidate solutions, called branches. Then, it makes
-one more call to choose the best branch. This means there are four calls
-per question, instead of just one as in CoT.
+In the Tree-of-Thought setup, the model generates three independent
+candidate solutions, referred to as branches. Subsequently, an
+additional call selects the optimal branch. Thus, four calls are
+executed per question, compared with the single call used in
+Chain-of-Thought (CoT) prompting.
 
 For each of the three branches, the model uses the same step-by-step
-prompt as in CoT, with one addition: each response is clearly marked as
-a separate attempt (``this is one independent solution attempt, attempt
-N of 3''), and the model is explicitly told not to hedge between
-methods but to commit to one approach and carry it through completely.
-The branches are generated at a temperature of 0.7 instead of 0. This is
-intentional: if the temperature were 0, each call would give almost the
-same answer, making the three branches too similar to compare. Using a
-moderate temperature helps ensure the branches are truly different
-solutions.
+prompt as in CoT, with an additional instruction: each response is
+explicitly labelled as a separate solution attempt (e.g., ``this is one
+independent solution attempt, attempt N of 3''). The model is instructed
+to commit to a single approach for each attempt, avoiding hedging
+between methods. Branches are generated at a temperature of 0.7, rather
+than 0, to promote diversity among solutions. A temperature of 0 would
+result in nearly identical outputs, reducing the effectiveness of
+comparative evaluation. Employing a moderate temperature ensures that
+the branches represent genuinely distinct solutions.
 
-After generating all three branches, the model makes another call at
-temperature 0 to keep the process consistent. It reviews the full text of
-all three candidates and evaluates which one is most mathematically
-sound. The model is told not to pick the answer that appears most often
-if the branches disagree, but instead to choose the branch with the
-strongest reasoning:
+After generating all three branches, the model performs an additional
+call at temperature 0 to maintain consistency. During this step, the
+model reviews the complete text of all three candidate solutions and
+evaluates which branch demonstrates the most mathematically sound
+reasoning. The model is instructed to select the branch with the
+strongest justification, rather than defaulting to the most frequently
+occurring answer in cases of disagreement among branches:
 
 \begin{quote}
 \ttfamily\small
@@ -161,19 +191,20 @@ the majority answer without checking the reasoning.
 \end{quote}
 
 It returns the number of the chosen branch and a brief explanation
-(``Selected Branch: <branch number>'', ``Justification: <one sentence,
-maximum 25 words>''). The full text of the selected branch is then used
-just like a CoT response. If this selection response cannot be parsed
-into a branch number, for example if the model does not follow the
-requested output format, the pipeline falls back to using the first
-generated branch rather than failing the run
-(\texttt{src/parser/response\_parser.py}). This is a deliberate
-robustness choice: a single malformed selection call degrades gracefully
-to a specific, predictable branch rather than discarding the entire
-question's data or crashing the pipeline mid-run.
+(``Selected Branch: \texttt{<branch number>}'', ``Justification:
+\texttt{<one sentence, maximum 25 words>}''). The full text of the
+selected branch is then used just like a CoT response. If this selection
+response cannot be parsed into a branch number, for example if the model
+does not follow the requested output format, the pipeline falls back to
+using the first generated branch rather than failing the
+run.\footnote{Implemented in \texttt{src/parser/response\_parser.py}.}
+This is a deliberate robustness choice: a single malformed selection
+call degrades gracefully to a specific, predictable branch rather than
+discarding the entire question's data or crashing the pipeline mid-run.
 
 As mentioned in Chapter~\ref{chap:literature}, this version of
-Tree-of-Thought is simpler than the full design by Yao et al. It does
+Tree-of-Thought is simpler than the full design by Yao et
+al.~\cite{yao2023tree}. It does
 just one round of branching and one selection step, instead of searching
 and pruning at every reasoning stage. This approach keeps the number of
 calls per question fixed at four, making costs predictable, but it means
@@ -218,6 +249,11 @@ are considered correct if any one of them agrees:
   \item \textbf{Text comparison}: as a final fallback, the normalised
   answers are compared as exact strings.
 \end{enumerate}
+
+This normalisation logic was developed iteratively, whenever a review of
+model outputs found a case where the correct answer was not being
+extracted or matched correctly, handling for that case was added and the
+check re-run.
 
 This normalisation and comparison logic is covered by unit tests against
 a set of known tricky cases (fractions, percentages, mixed numbers, and
@@ -278,10 +314,10 @@ effects.
 
 RQ3 asks whether Tree-of-Thought leads to different answer correctness
 compared to Chain-of-Thought for each model. Each model answers the same
-131 questions using both CoT and ToT, so the results are paired, not
+120 questions using both CoT and ToT, so the results are paired, not
 independent. Comparing the raw accuracy percentages directly would
-wrongly treat 262 observations as independent, when there are actually
-131 pairs. McNemar's test focuses only on the discordant pairs, which are
+wrongly treat 240 observations as independent, when there are actually
+120 pairs. McNemar's test focuses only on the discordant pairs, which are
 questions where the two methods disagree: correct under CoT but not ToT
 ($b$), or correct under ToT but not CoT ($c$). Concordant pairs, where
 both are correct or both are incorrect, do not help determine which
@@ -339,9 +375,13 @@ it follows a certain method.
 
 There is a clear conflict of interest in this judging setup. Gemini acts
 as the main judge, but it is also one of the three models being tested.
-This means Gemini sometimes reviews its own answers. As a result, the
-judge might be more forgiving toward responses that match its own style,
-which could unfairly favour Gemini in the comparison.
+This means Gemini sometimes reviews its own answers. To reduce this
+risk, the judge prompt conceals the identity of the model that generated
+each response. The judge is provided only with the question, category,
+reference answer, and the reasoning text. Although this approach does
+not completely resolve the risk of bias, as Gemini may still recognise
+its own stylistic patterns, it lowers the chances of the judge favouring
+responses that are easily identifiable as its own.
 
 To address this, the evaluation included a neutral-judge validation step.
 Up to 120 responses judged by Gemini were supposed to be re-judged by a
@@ -412,5 +452,5 @@ count (0.29) in the Model x Error Type table.
 \textbf{Pending answer-evaluator validation.} As explained in
 Section~\ref{sec:answer-eval}, the automatic answer evaluator was tested with
 unit tests on tricky cases. However, the planned step of manually grading
-a sample of real model outputs to compare the automatic evaluator with
-human judgment was not done.
+a sample of around 30--40 real model outputs, to compare the automatic
+evaluator with human judgment, was not done.

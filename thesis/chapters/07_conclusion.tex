@@ -1,0 +1,41 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+This dissertation aimed to go beyond just measuring accuracy when
+evaluating mathematical reasoning in Large Language Models. It explored
+what types of errors three models make, whether longer reasoning leads
+to more correct answers, and whether Tree-of-Thought prompting actually
+improves results compared to Chain-of-Thought. The answers to these
+questions are not straightforward. Gemini, GPT-OSS-120B, and Mistral
+Large all share the main weakness of Combinatorial Counting Error,
+suggesting this is a common limitation in current mathematical reasoning
+methods, not just a problem with one provider. For two of the three
+models, longer reasoning does not mean more reliable answers. For
+Mistral Large, the exception, incorrect answers actually involve more
+reasoning steps than correct ones -- extra effort does not translate
+into a better outcome, which may be because the model cannot control how
+long its reasoning is. Tree-of-Thought prompting improves accuracy for
+two of the three models, but this comes with a considerable
+computational cost. For the third model, the same effort does not lead
+to any clear benefit.
+
+Overall, these results show that LLM mathematical reasoning should not
+be seen as a single, uniform skill that reacts the same way to every
+prompting strategy. For people considering Tree-of-Thought prompting in
+a mathematical reasoning task, the data show that its effectiveness
+depends on the specific model and should be tested directly, not assumed
+based on results from other models. It is important to evaluate each new
+model or prompting method on its own, instead of expecting patterns from
+previous studies always to apply.
+
+This study took place at a specific time, using three free-tier models
+tested with a curated set of 131 questions. Some parts of the analysis
+have real constraints: the neutral-judge validation was left unfinished
+due to the provider's daily token quota, and the RQ2 significance test,
+while run as a supplementary check, gave mixed, test-dependent results
+rather than a confirmed finding, as explained in
+Section~\ref{sec:threats-validity}. Even with these limits, the main
+conclusion remains: looking only at
+accuracy would have missed the shared error pattern, the link between
+step count and correctness for each model, and the model-specific
+effects of Tree-of-Thought prompting that this deeper analysis showed.

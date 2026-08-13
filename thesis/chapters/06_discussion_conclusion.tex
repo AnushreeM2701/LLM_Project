@@ -1,18 +1,8 @@
-\chapter{Discussion and Conclusion}
+\chapter{Discussion}
 \label{chap:discussion}
 
-% TODO: this chapter needs critical interpretation more than any other --
-% the argument (why the pattern looks the way it does, what it means,
-% where the findings should be pushed back on) must be in the author's
-% own voice. Draft once Chapter~\ref{chap:results} is finalised.
-
-% Opening paragraph(s) go here, unlabeled (no "Overview" heading -- see
-% Chapter~\ref{chap:introduction} for the convention used throughout this
-% dissertation). One paragraph: what this chapter does (interprets the
-% results of the three research questions, discusses validity threats,
-% states conclusions and future work).
-
 \section{Interpretation of Error Type Findings}
+\label{sec:error-type-interpretation}
 
 The most noticeable pattern in the error-type data is not how the models
 differ, but what they have in common. Combinatorial Counting Error is
@@ -82,7 +72,7 @@ Another possible explanation is that some Hard-tier questions are more
 difficult than others. These harder questions might require more steps
 from any model and are more likely to be answered incorrectly. If this
 were the main reason, a similar step-count gap would be expected for
-Gemini and GPT-OSS-120B, since all three models faced the same 51
+Gemini and GPT-OSS-120B, since all three models faced the same 40
 Hard-tier questions. Since this gap does not appear for the other two
 models, the pure-difficulty explanation seems less convincing as the
 only cause. Still, it may play a role in how Mistral Large handles
@@ -93,7 +83,7 @@ data, not a proven cause.
 
 Section~\ref{sec:overall-accuracy} (CoT vs. ToT) shows that ToT improves
 accuracy significantly for two models, GPT-OSS-120B and Mistral Large,
-but not for Gemini. Section~\ref{sec:pipeline} explains that ToT
+but not for Gemini. Section~\ref{sec:tot-design} explains that ToT
 requires about four times as many generation calls as CoT, and
 Section~\ref{sec:execution-time} shows the practical result: mean execution
 time increases by 2.29x for Gemini, 4.62x for GPT-OSS-120B, and 2.99x
@@ -112,7 +102,7 @@ the extra computation leads to a real benefit.
 For Gemini, there is no case to make at all. Its Hard-tier accuracy is
 identical under both strategies (50.0\% for CoT and ToT), and its
 Medium-tier accuracy actually falls slightly under ToT (100.0\% to
-97.5\%). With only 7 discordant pairs, split 4 to 3 in CoT's favour
+97.5\%). With only 6 discordant pairs, split evenly 3 to 3
 (Section~\ref{sec:overall-accuracy}), McNemar's test gives $p = 1.0$ --
 about as clean a null result as this kind of test can produce. Gemini
 still pays a 2.29x execution-time cost for ToT, without any accuracy
@@ -173,7 +163,7 @@ neither confirmed nor ruled out. Some RQ1 findings are more exposed to
 this risk than others: a claim that Gemini's own errors are classified
 differently from the other two models' errors would be directly
 vulnerable to judge leniency, whereas the shared-weakness finding
-discussed in Section~\ref{chap:discussion} (Combinatorial Counting Error
+discussed in Section~\ref{sec:error-type-interpretation} (Combinatorial Counting Error
 dominant across all three models, including the two Gemini has no
 evaluative stake in) is comparatively less exposed, since a bias
 favourable to Gemini specifically could not manufacture a pattern shared
@@ -311,14 +301,19 @@ sample, curated and categorised beyond what was available for this
 project, would allow category-level claims to be tested with confidence
 rather than treated as descriptive.
 
-This dissertation's RQ2 was limited to a descriptive analysis, so no
-formal significance test was used for the step-count-versus-correctness
-comparison (Section~\ref{sec:step-count}). An appropriate next step
-would be to test this relationship formally. For example, a
-Mann-Whitney U test could compare the step-count distributions of
-correct and incorrect responses for Mistral Large, to see if the
-observed gap (Section~\ref{sec:summary-findings}) is statistically
-significant rather than just descriptively interesting.
+This dissertation's RQ2 was limited to a descriptive analysis in the
+main text (Section~\ref{sec:step-count}), though an exploratory
+Mann-Whitney U test and logistic regression were run as a supplementary
+check, broken down by model, prompt, and difficulty tier. The results
+were mixed and test-dependent: for example, Gemini's Hard-tier CoT gap
+reached significance under the Mann-Whitney test ($p = 0.008$) but not
+under logistic regression ($p = 0.219$) on the same data, and no other
+model/prompt cell reached significance under either test. Because the
+two tests disagreed on the one notable case, and most cells were
+underpowered at this sample size, these results were not treated as a
+confirmed finding in the main text. A larger-scale replication, with
+enough data to give consistent results across test choices, remains a
+natural next step.
 
 The Tree-of-Thought design used here creates three candidates
 independently and then picks one in a single round. This is different
@@ -349,41 +344,3 @@ here -- especially the shared Combinatorial Counting Error weakness and
 the model-dependent ToT benefit -- continue as models improve or are
 unique to this generation.
 
-\section{Conclusion}
-
-This dissertation aimed to go beyond just measuring accuracy when
-evaluating mathematical reasoning in Large Language Models. It explored
-what types of errors three models make, whether longer reasoning leads
-to more correct answers, and whether Tree-of-Thought prompting actually
-improves results compared to Chain-of-Thought. The answers to these
-questions are not straightforward. Gemini, GPT-OSS-120B, and Mistral
-Large all share the main weakness of Combinatorial Counting Error,
-suggesting this is a common limitation in current mathematical reasoning
-methods, not just a problem with one provider. For two of the three
-models, longer reasoning does not mean more reliable answers. For
-Mistral Large, the exception, incorrect answers actually involve more
-reasoning steps than correct ones -- extra effort does not translate
-into a better outcome, which may be because the model cannot control how
-long its reasoning is. Tree-of-Thought prompting improves accuracy for
-two of the three models, but this comes with a considerable
-computational cost. For the third model, the same effort does not lead
-to any clear benefit.
-
-Overall, these results show that LLM mathematical reasoning should not
-be seen as a single, uniform skill that reacts the same way to every
-prompting strategy. For people considering Tree-of-Thought prompting in
-a mathematical reasoning task, the data show that its effectiveness
-depends on the specific model and should be tested directly, not assumed
-based on results from other models. It is important to evaluate each new
-model or prompting method on its own, instead of expecting patterns from
-previous studies always to apply.
-
-This study took place at a specific time, using three free-tier models
-tested with a curated set of 131 questions. Some parts of the analysis,
-such as the neutral-judge validation and the RQ2 significance test, were
-only described or left unfinished because of the practical limits of an
-MSc dissertation, as explained in Section~\ref{sec:threats-validity}.
-Even with these limits, the main conclusion remains: looking only at
-accuracy would have missed the shared error pattern, the link between
-step count and correctness for each model, and the model-specific
-effects of Tree-of-Thought prompting that this deeper analysis showed.

@@ -27,8 +27,8 @@
 \footskip=24pt
 \fancyhf{}
 \renewcommand{\chaptermark}[1]{\markboth{}{#1}}
-\fancyhead[RO,LE]{\bfseries \theShortTitle}
-\fancyhead[LO,RE]{\bfseries \rightmark}
+\fancyhead[R]{\bfseries \theShortTitle}
+\fancyhead[L]{\bfseries \rightmark}
 \fancyfoot[C]{\thepage}
 
 % Spacing
@@ -42,6 +42,7 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{longtable}
+\usepackage{float}
 
 % Graphics -- figures can go in ./Figures/, or point directly at the
 % project's generated outputs so regenerated figures don't need copying.
@@ -159,54 +160,37 @@
 \setcounter{page}{1}
 \pagenumbering{roman}
 
-% ---------- Declaration ----------
-\fancyhead[LO,RE]{\bfseries Declaration}
-\chapter*{Declaration}
-\addcontentsline{toc}{chapter}{Declaration}
-I hereby declare that this dissertation is entirely my own work and has not
-been submitted, in whole or in part, for any other academic award at this
-or any other institution. Where the work of others has been used or
-referenced, it has been fully acknowledged.
-
-\vspace{2cm}
-\noindent Signed: \underline{\hspace{6cm}} \quad Date: \underline{\hspace{4cm}}
-
-\newpage
-
-% ---------- Acknowledgements ----------
-\fancyhead[LO,RE]{\bfseries Acknowledgements}
-\chapter*{Acknowledgements}
-\addcontentsline{toc}{chapter}{Acknowledgements}
-% TODO: write yourself.
-
-\newpage
-
 % ---------- Abstract (≤200 words per the MSc outline) ----------
-\fancyhead[LO,RE]{\bfseries Abstract}
+\fancyhead[L]{\bfseries Abstract}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Large Language Models (LLMs) are often judged on mathematical reasoning
-benchmarks by final-answer accuracy alone, which reveals little about
-the reasoning process. This dissertation evaluates three LLMs, Gemini
-Flash Lite, GPT-OSS-120B, and Mistral Large, using both
-Chain-of-Thought (CoT) and Tree-of-Thought (ToT) prompting on 131
-mathematics problems from Hendrycks MATH and the American Invitational
-Mathematics Examination (AIME), resulting in 786 responses. The study
-addresses three questions. First, it looks at the types of reasoning
-errors each model makes. Combinatorial Counting Error is the most
-common error for all three models, and a Chi-square test shows no
-significant difference in error types between them. Second, it examines
-the link between reasoning length and correctness. For Mistral Large,
-incorrect Hard-tier answers use more steps than correct ones, while
-Gemini and GPT-OSS-120B do not show this pattern. Third, it tests
-whether ToT improves accuracy compared to CoT. McNemar's Exact Test
-finds that ToT significantly improves accuracy for GPT-OSS-120B and
-Mistral Large, but not for Gemini, even though ToT costs about four
-times more. These findings show that LLMs differ in their reasoning
-errors and in how much they benefit from different prompting
-strategies, and that looking only at accuracy would have missed these
-differences.
+Large Language Models (LLMs) are frequently evaluated on mathematical
+reasoning benchmarks using only final-answer accuracy, which provides
+limited insight into their reasoning processes. This dissertation
+assesses three LLMs -- Gemini Flash Lite (\texttt{gemini-flash-lite-latest},
+resolving to \texttt{gemini-3.5-flash-lite}), GPT-OSS-120B
+(\texttt{openai/gpt-oss-120b}, accessed via Groq), and Mistral Large
+(\texttt{mistral-large-latest}, resolving to Mistral Large 3,
+\texttt{mistral-large-2512}) -- by applying both Chain-of-Thought (CoT)
+and Tree-of-Thought (ToT) prompting to 131 mathematics problems from
+Hendrycks MATH and the American Invitational Mathematics Examination
+(AIME), yielding 786 responses. The study addresses three primary
+questions. First, it analyses the types of reasoning errors produced by
+each model, finding that Combinatorial Counting Error is the most
+prevalent across all three, with a Chi-square test indicating no
+significant difference in error distributions. Second, it investigates
+the relationship between reasoning length and correctness, revealing
+that for Mistral Large, incorrect Hard-tier responses involve more
+steps than correct ones, a pattern not observed in Gemini or
+GPT-OSS-120B. Third, it evaluates whether ToT prompting enhances
+correctness relative to CoT. McNemar's Exact Test demonstrates that ToT
+significantly increases accuracy for GPT-OSS-120B and Mistral Large,
+but not for Gemini, despite ToT incurring approximately four times the
+computational cost. These findings indicate that LLMs vary in their
+reasoning errors and in the extent to which they benefit from different
+prompting strategies, and that relying solely on accuracy would obscure
+these distinctions.
 
 \vspace{30pt}
 \emph{\textbf{Keywords:} Large Language Models, Mathematical Reasoning, Chain-of-Thought, Tree-of-Thought, Error Analysis}
@@ -215,26 +199,28 @@ differences.
 
 \parskip=12pt
 
-\fancyhead[LO,RE]{\bfseries Contents}
+\fancyhead[L]{\bfseries Contents}
 \addcontentsline{toc}{chapter}{Table of contents}
 \tableofcontents
 
 \newpage
-\fancyhead[LO,RE]{\bfseries List of figures}
+\fancyhead[L]{\bfseries List of figures}
 \addcontentsline{toc}{chapter}{List of figures}
 \listoffigures
 
 \newpage
-\fancyhead[LO,RE]{\bfseries List of tables}
+\fancyhead[L]{\bfseries List of tables}
 \addcontentsline{toc}{chapter}{List of tables}
 \listoftables
 
 \newpage
-\fancyhead[LO,RE]{\bfseries List of Abbreviations}
+\fancyhead[L]{\bfseries List of Abbreviations}
 \chapter*{List of Abbreviations}
 \addcontentsline{toc}{chapter}{List of Abbreviations}
 \begin{tabular}{ll}
     AIME & American Invitational Mathematics Examination \\
+    API  & Application Programming Interface \\
+    CI   & Confidence Interval \\
     CoT  & Chain-of-Thought \\
     LLM  & Large Language Model \\
     RQ   & Research Question \\
@@ -244,16 +230,14 @@ differences.
 \newpage
 \fancyhead{}
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
-\fancyhead[LO,RE]{\bfseries \leftmark}
-\fancyhead[RO,LE]{\bfseries \theShortTitle}
+\fancyhead[L]{\bfseries \leftmark}
+\fancyhead[R]{\bfseries \theShortTitle}
 
 \pagenumbering{arabic}
 
 % ==========================================================
 % CHAPTERS -- per the MSc outline: Introduction, Literature Review,
-% Statistical/Mathematical Methodology, Application/Case Study, Results,
-% Discussion and Conclusion (merged into one chapter per the outline's
-% "as appropriate" flexibility, given the 45-75 page target).
+% Methodology, Application/Case Study, Results, Discussion, Conclusion.
 % ==========================================================
 \input{chapters/01_introduction}
 \input{chapters/02_literature_review}
@@ -261,6 +245,7 @@ differences.
 \input{chapters/04_case_study}
 \input{chapters/05_results}
 \input{chapters/06_discussion_conclusion}
+\input{chapters/07_conclusion}
 
 % ==========================================================
 % REFERENCES
@@ -268,7 +253,7 @@ differences.
 \newpage
 \renewcommand{\bibname}{References}
 \addcontentsline{toc}{chapter}{References}
-\fancyhead[RO,LE]{\bfseries References}
+\fancyhead[R]{\bfseries References}
 \begin{thebibliography}{99}
 
 \bibitem{brown2020fewshot}
@@ -403,11 +388,5 @@ Z., Li, Z., Li, D., Xing, E.P., Zhang, H., Gonzalez, J.E. and Stoica, I.
 Advances in Neural Information Processing Systems (NeurIPS 2023).
 
 \end{thebibliography}
-
-% ==========================================================
-% APPENDICES -- calculations, program listings, output, per the MSc outline.
-% ==========================================================
-\appendix
-\input{chapters/appendix}
 
 \end{document}

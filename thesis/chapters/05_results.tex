@@ -18,7 +18,7 @@ throughout this chapter (Section~\ref{sec:threats-validity}). The
 correctness heatmap in Section~\ref{sec:question-correctness} is the one
 exception and still covers the full 51 Hard-tier questions.
 
-\begin{table}[h]
+\begin{table}[H]
   \centering
   \caption{Accuracy by model, difficulty tier, and prompting strategy.}
   \label{tab:accuracy-difficulty}
@@ -62,7 +62,7 @@ The accuracy percentages reported above are point estimates.
 Table~\ref{tab:ci-hard} reports their 95\% Wilson score confidence
 intervals (Section~\ref{sec:models}) for the Hard tier.
 
-\begin{table}[h]
+\begin{table}[H]
   \centering
   \caption{Hard-tier accuracy with 95\% Wilson confidence intervals.}
   \label{tab:ci-hard}
@@ -99,58 +99,69 @@ take place and where those comparisons are least statistically precise.
 \section{Accuracy by Mathematical Category}
 \label{sec:category-accuracy}
 
-This section shows the accuracy results combined across difficulty
-tiers and prompting strategies, separated into the four mathematical
-categories in the dataset: Algebra, Combinatorics, Number Theory, and
-Probability. As in Section~\ref{sec:overall-accuracy}, the Hard tier
-uses the same seeded 40-of-51 balanced pool. The full breakdown by
-category, difficulty tier, and prompting strategy is available in
-\texttt{outputs/tables/accuracy\_by\_model\_category.csv}; the table
-below pools difficulty tier and prompting strategy together so that the
-category-level pattern is readable at a glance.
+This section shows the Hard-tier accuracy results separated into the
+four mathematical categories in the dataset (Algebra, Combinatorics,
+Number Theory, and Probability), broken down further by prompting
+strategy. As in Section~\ref{sec:overall-accuracy}, the Hard tier uses
+the same seeded 40-of-51 balanced pool. Easy and Medium are not broken
+out by category here since both tiers are at or near ceiling (95--100\%)
+regardless of category (Section~\ref{sec:overall-accuracy}).
 
-\begin{table}[h]
+\begin{table}[H]
   \centering
-  \caption{Accuracy by model and mathematical category, pooled across difficulty tier and prompting strategy.}
+  \caption{Hard-tier accuracy by model, category, and prompting strategy.}
   \label{tab:accuracy-category}
-  \begin{tabular}{llrr}
+  \begin{tabular}{llrrr}
     \toprule
-    Model & Category & N & Accuracy \\
+    Model & Category & N & CoT & ToT \\
     \midrule
-    \multirow{4}{*}{Gemini} & Algebra & 62 & 80.6\% \\
-     & Combinatorics & 64 & 75.0\% \\
-     & Number Theory & 58 & 89.7\% \\
-     & Probability & 56 & 80.4\% \\
+    \multirow{4}{*}{Gemini} & Algebra & 11 & 54.5\% & 54.5\% \\
+     & Combinatorics & 12 & 50.0\% & 41.7\% \\
+     & Number Theory & 9 & 55.6\% & 77.8\% \\
+     & Probability & 8 & 37.5\% & 25.0\% \\
     \midrule
-    \multirow{4}{*}{GPT-OSS-120B} & Algebra & 62 & 87.1\% \\
-     & Combinatorics & 64 & 82.8\% \\
-     & Number Theory & 58 & 86.2\% \\
-     & Probability & 56 & 83.9\% \\
+    \multirow{4}{*}{GPT-OSS-120B} & Algebra & 11 & 54.5\% & 72.7\% \\
+     & Combinatorics & 12 & 50.0\% & 58.3\% \\
+     & Number Theory & 9 & 33.3\% & 77.8\% \\
+     & Probability & 8 & 37.5\% & 50.0\% \\
     \midrule
-    \multirow{4}{*}{Mistral Large} & Algebra & 62 & 87.1\% \\
-     & Combinatorics & 64 & 70.3\% \\
-     & Number Theory & 58 & 89.7\% \\
-     & Probability & 56 & 78.6\% \\
+    \multirow{4}{*}{Mistral Large} & Algebra & 11 & 45.5\% & 81.8\% \\
+     & Combinatorics & 12 & 25.0\% & 33.3\% \\
+     & Number Theory & 9 & 55.6\% & 77.8\% \\
+     & Probability & 8 & 25.0\% & 25.0\% \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Combinatorics is the weakest category for all models. Gemini has its
-lowest accuracy here at 75.0\%, Mistral Large at 70.3\%, and
-GPT-OSS-120B has its second-lowest, just below Probability (82.8\%
-compared to 83.9\%). Number Theory is a strong category for all three
-models. It is the highest for both Gemini (89.7\%) and Mistral Large
-(89.7\%), and the second-highest for GPT-OSS-120B (86.2\%), just behind
-Algebra (87.1\%).
+Easy-tier accuracy shows almost no category-level variation: every
+model scores 100\% in at least three of the four categories, with the
+only exceptions being Gemini (90\% in Algebra and Combinatorics) and
+Mistral Large (90\% in Combinatorics). Medium-tier accuracy is even more
+uniform, with every model-category combination at 100\% except one
+(Gemini's Combinatorics accuracy under ToT, at 90\%). Because Easy and
+Medium sit this close to the ceiling regardless of category, they
+contribute little to distinguishing category-level strengths and
+weaknesses between models; that distinction only emerges clearly at the
+Hard tier.
 
-This pattern corresponds to the RQ1 finding that Combinatorial Counting
-Error is the most common error type for all three models
-(Section~\ref{sec:rq1}). The category where models most often get the
-answer wrong is also where this main error type appears. Because this
-breakdown combines all difficulty tiers, and the Hard tier has uneven
-category counts (Section~\ref{sec:threats-validity}), this pattern is
-meant to be descriptive. No significance test was done for
-category-level accuracy in this dissertation.
+At the Hard tier, Probability is the lowest-accuracy category for all
+three models when CoT and ToT are pooled (Gemini 31.2\%, GPT-OSS-120B
+43.8\%, Mistral 25.0\%). This holds cleanly under ToT alone, where
+Probability is the weakest category for every model. Under CoT alone it
+holds for Gemini and Mistral, but GPT-OSS-120B's CoT-weakest category is
+actually Number Theory (33.3\%), narrowly below its Probability accuracy
+(37.5\%).
+
+This differs from the RQ1 finding that Combinatorial Counting Error is
+the most common error type overall (Section~\ref{sec:rq1}): that error
+type is concentrated in Combinatorics-category questions specifically
+(34 of 44 occurrences), not Probability. The Hard-tier Probability
+questions that models get wrong are instead dominated by Probability
+Reasoning Error (12 of 32 incorrect Hard-tier Probability responses), a
+distinct error type from Combinatorial Counting Error. Because this
+breakdown uses the Hard tier's uneven category counts
+(Section~\ref{sec:threats-validity}), these category-level patterns are
+descriptive rather than the subject of a formal significance test.
 
 \section{Error Type Distribution}
 \label{sec:rq1}
@@ -207,16 +218,16 @@ $\times$ Difficulty breakdown for each model, separately for CoT and
 ToT, within the balanced 40 Easy + 40 Medium + 40 Hard question pool (see
 Chapter 3).
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{error_type_distribution_by_model_cot.png}
+  \includegraphics[width=\textwidth]{error_type_distribution_by_model_cot_report.png}
   \caption{Error Type $\times$ Difficulty, by model, CoT (balanced 40/40/40 pool).}
   \label{fig:rq1-cot}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{error_type_distribution_by_model_tot.png}
+  \includegraphics[width=\textwidth]{error_type_distribution_by_model_tot_report.png}
   \caption{Error Type $\times$ Difficulty, by model, ToT (balanced 40/40/40 pool).}
   \label{fig:rq1-tot}
 \end{figure}
@@ -252,16 +263,16 @@ wrong, so that every model's bar chart is drawn from exactly the same
 set of questions rather than each model's own, differently-sized
 wrong-answer pool (17 questions under CoT, 11 under ToT).
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_cot.png}
+  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_cot_report.png}
   \caption{Error type frequency by model, Hard tier, CoT (common-wrong-question pool, $n=17$).}
   \label{fig:hard-freq-cot}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_tot.png}
+  \includegraphics[width=\textwidth]{error_type_frequency_hard_by_model_tot_report.png}
   \caption{Error type frequency by model, Hard tier, ToT (common-wrong-question pool, $n=11$).}
   \label{fig:hard-freq-tot}
 \end{figure}
@@ -290,8 +301,9 @@ the Hard tier uses the same seeded 40-of-51 balanced pool. On the Easy
 and Medium tiers, all three models perform nearly perfectly: GPT-OSS-120B
 answers every Easy and Medium question correctly with both prompting
 strategies (80 out of 80 in each tier), and Gemini and Mistral Large each
-have only one to four incorrect responses in these tiers combined. With
-so few incorrect cases, it is not possible to make a meaningful
+have only a handful of incorrect responses in these tiers combined
+(Gemini 5, Mistral Large 2). With so few incorrect cases, it is not
+possible to make a meaningful
 comparison between correct and incorrect step counts except on the Hard
 tier, where all three models have a substantial number of both correct
 and incorrect answers (36 to 43 incorrect responses per model).
@@ -315,14 +327,14 @@ GPT-OSS-120B's, especially on the Hard tier. In contrast, GPT-OSS-120B's
 markers form the tightest and most consistent cluster of the three models
 across all difficulty tiers.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{step_count_by_question_cot.png}
   \caption{Step count per question by model and correctness, CoT.}
   \label{fig:step-count-cot}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{step_count_by_question_tot.png}
   \caption{Step count per question by model and correctness, ToT.}
@@ -345,24 +357,40 @@ edge for CoT: 81.7\% with CoT versus 80.8\% with ToT. However, because
 each model answers the same 120 questions with both strategies, these
 percentages cannot be directly compared. Only the questions where the
 two strategies give different answers (the discordant pairs) show which
-strategy performs better.
+strategy performs better, and this pattern is concentrated almost
+entirely in the Hard tier (Table~\ref{tab:cot-tot-hard}).
 
-For Gemini, there are 7 discordant pairs: 4 questions are correct only
-with CoT, and 3 are correct only with ToT. McNemar's exact test gives
-$p = 1.0$, which is not significant. With so few discordant pairs, and
-split almost evenly between the two strategies, there is no evidence
-here that either strategy is better for Gemini.
+\begin{table}[H]
+  \centering
+  \caption{CoT vs.\ ToT accuracy and McNemar's exact test, Hard tier only.}
+  \label{tab:cot-tot-hard}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Model & CoT & ToT & $b$ & $c$ & $p$-value & Significant \\
+    \midrule
+    Gemini & 50.0\% & 50.0\% & 3 & 3 & 1.000 & No \\
+    GPT-OSS-120B & 45.0\% & 65.0\% & 1 & 9 & 0.021 & Yes \\
+    Mistral Large & 37.5\% & 55.0\% & 0 & 7 & 0.016 & Yes \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-For GPT-OSS-120B, there are 10 discordant pairs, and the results are much
-more one-sided: only 1 question is correct only with CoT, while 9 are
-correct only with ToT. This gives $p = 0.021$, which is significant at
-the 0.05 level.
+For Gemini, there are 6 discordant pairs at the Hard tier: 3 questions
+are correct only with CoT, and 3 are correct only with ToT. McNemar's
+exact test gives $p = 1.0$, which is not significant. With so few
+discordant pairs, split evenly between the two strategies, there is no
+evidence here that either strategy is better for Gemini.
+
+For GPT-OSS-120B, there are 10 discordant pairs at the Hard tier, and
+the results are much more one-sided: only 1 question is correct only
+with CoT, while 9 are correct only with ToT. This gives $p = 0.021$,
+which is significant at the 0.05 level.
 
 For Mistral Large, the result is the most one-sided: out of 7 discordant
-pairs, none are correct only with CoT, and all 7 are correct only with
-ToT. Every disagreement between the two strategies favours ToT. This
-gives $p = 0.016$, which is the strongest evidence among the three
-models that ToT affects performance.
+pairs at the Hard tier, none are correct only with CoT, and all 7 are
+correct only with ToT. Every disagreement between the two strategies
+favours ToT. This gives $p = 0.016$, which is the strongest evidence
+among the three models that ToT affects performance.
 
 Overall, these results do not support a general claim that ``ToT
 improves performance.'' The improvement is statistically significant for
@@ -374,7 +402,7 @@ noticeable in the Hard tier. In the Easy and Medium tiers, accuracy is
 already very high for all models, so there is little room for a
 prompting strategy to make a measurable difference.
 
-\section{Question-Level Correctness Across Conditions}
+\section{Analysis of Question-Level Correctness}
 \label{sec:question-correctness}
 
 This section examines correctness by focusing on each question instead
@@ -398,7 +426,7 @@ shows this in detail. Each row represents a Hard-tier question with at
 least one incorrect answer, and each column shows one of the six model
 and prompt combinations, coloured by whether the answer was correct.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{correctness_heatmap_hard.png}
   \caption{Per-question correctness across all six model/prompt conditions, Hard tier (questions with at least one incorrect answer).}
@@ -459,13 +487,21 @@ two models under both prompting strategies, consistent with its
 free-tier rate limit of 2 requests per minute described in
 Section~\ref{sec:pipeline}.
 
-Figure~\ref{fig:execution-time-tot} shows this per question under ToT:
-Mistral Large's Hard-tier execution times are the most extreme, with
-several questions exceeding the 300s axis cap (labelled individually up
-to 894s). The corresponding CoT figure, where execution times are
-comparatively unremarkable, is not shown here.
+Figures~\ref{fig:execution-time-cot} and~\ref{fig:execution-time-tot}
+show this per question, for CoT and ToT respectively. Under CoT,
+execution times are comparatively unremarkable, with no question
+exceeding the 300s axis cap. Under ToT, Mistral Large's Hard-tier
+execution times are the most extreme, with several questions exceeding
+the 300s axis cap (labelled individually up to 894s).
 
-\begin{figure}[h]
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{execution_time_by_difficulty_cot.png}
+  \caption{Execution time per question by model and difficulty tier, CoT.}
+  \label{fig:execution-time-cot}
+\end{figure}
+
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{execution_time_by_difficulty_tot.png}
   \caption{Execution time per question by model and difficulty tier, ToT.}
